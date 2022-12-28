@@ -158,7 +158,7 @@ export default {
                 { icon: 'web', text: 'Top stories' },
             ],
             links2: [
-                { icon: 'flag', text: 'next' },
+                { icon: 'flag', text: 'great' },
             ],
             links3: [
                 // { icon: '', text: 'Language & region' },
