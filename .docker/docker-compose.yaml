@@ -1,0 +1,114 @@
+version: "3"
+
+networks:
+  my_socket_ipc_network:
+    driver: bridge
+
+volumes:
+  myproj_local_postgres_data: {}
+  myproj_local_postgres_data_backups: {}
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: myproj_local_django
+    container_name: myproj_local_django
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - my_socket_ipc_network
+    command: /start
+
+  postgres:
+    container_name: postgres
+    image: postgres:11.1
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    volumes:
+      - myproj_local_postgres_data:/var/lib/postgresql/data
+      - myproj_local_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.local/.postgres
+    expose:
+      - "5432"
+    ports:
+      - 5432:5432
+    networks:
+      - my_socket_ipc_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres
+    ports:
+      - 5454:5454/tcp
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mydomain.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+      - PGADMIN_LISTEN_PORT=5454
+    networks:
+      - my_socket_ipc_network
+
+  # docs:
+  #   image: myproj_local_docs
+  #   container_name: myproj_local_docs
+  #   build:
+  #     context: .
+  #     dockerfile: ./compose/local/docs/Dockerfile
+  #   env_file:
+  #     - ./.envs/.local/.django
+  #   volumes:
+  #     - ./docs:/docs:z
+  #     - ./config:/app/config:z
+  #     - ./myproj:/app/myproj:z
+  #   ports:
+  #     - "9000:9000"
+  #   networks:
+  #     - my_socket_ipc_network
+  #   command: /start-docs
+
+  frontend:
+    container_name: frontend
+    restart: always
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: hectperscalper_frontend_image
+    depends_on:
+      - django
+    volumes:
+      - ./frontend/nginx:/etc/nginx/conf.d
+    ports:
+      - 81:80
+    networks:
+      - my_socket_ipc_network
+
+  trade_socket:
+    container_name: trade_socket_server
+    restart: always
+    build:
+      context: ./trade_socket
+      dockerfile: Dockerfile
+    image: trade_socket:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    env_file:
+      - ./.envs/.local/.postgres
+    command: /start
+    networks:
+      - my_socket_ipc_network
+    volumes:
+      - ./trade_socket:/trade_socket:z
+      - ./myproj:/app/myproj:z

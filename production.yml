@@ -1,0 +1,111 @@
+version: "3"
+
+networks:
+  my_socket_ipc_network:
+    driver: bridge
+
+volumes:
+  production_postgres_data: {}
+  production_postgres_data_backups: {}
+  production_traefik: {}
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./compose/production/django/Dockerfile
+    image: myproj_production_django
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./.envs/.production/.django
+      - ./.envs/.production/.postgres
+    command: /start
+    networks:
+      - my_socket_ipc_network
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: myproj_production_postgres
+    volumes:
+      - production_postgres_data:/var/lib/postgresql/data
+      - production_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.production/.postgres
+    expose:
+      - "5432"
+    ports:
+      - 5432:5432
+    networks:
+      - my_socket_ipc_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres
+    ports:
+      - 5454:5454/tcp
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mydomain.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+      - PGADMIN_LISTEN_PORT=5454
+    networks:
+      - my_socket_ipc_network
+
+  traefik:
+    build:
+      context: .
+      dockerfile: ./compose/production/traefik/Dockerfile
+    image: myproj_production_traefik
+    depends_on:
+      - django
+    volumes:
+      - production_traefik:/etc/traefik/acme
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    networks:
+      - my_socket_ipc_network
+
+  redis:
+    image: redis:6
+    networks:
+      - my_socket_ipc_network
+
+  frontend:
+    container_name: frontend
+    restart: always
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: hectperscalper_frontend_image
+    depends_on:
+      - django
+    volumes:
+      - ./frontend/nginx:/etc/nginx/conf.d
+    ports:
+      - 80
+    networks:
+      - my_socket_ipc_network
+  trade_socket:
+    container_name: trade_socket_server
+    restart: always
+    build:
+      context: ./trade_socket
+      dockerfile: Dockerfile
+    image: trade_socket:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    env_file:
+      - ./.envs/.local/.postgres
+    command: /start
+    networks:
+      - my_socket_ipc_network
+    volumes:
+      - ./trade_socket:/trade_socket:z
+      - ./myproj:/app/myproj:z
