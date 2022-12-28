@@ -1,0 +1,12 @@
+{
+  "name": "frontend",
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+  "service": "app",
+  "shutdownAction": "none",
+  "extensions": [
+    "dbaeumer.vscode-eslint"
+  ],
+  "workspaceFolder": "/workspace"
+}
