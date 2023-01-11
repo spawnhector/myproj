@@ -1,9 +1,26 @@
-import { createApp } from 'vue';
+// Import icon libraries
+import "@quasar/extras/material-icons/material-icons.css";
+// Import Quasar css
+import "quasar/src/css/index.sass";
+import "./style.css";
+import "./style.scss";
 
-import { Quasar } from 'quasar';
+import { createApp } from "vue";
 
-import App from './App.vue';
-import quasarUserOptions from './quasar-user-options';
+import { createPinia } from "pinia";
+import { AppFullscreen, Quasar } from "quasar";
+import { createWebHistory } from "vue-router";
 
-console.log('test');
-createApp(App).use(Quasar, quasarUserOptions).mount('#app');
+import App from "./App.vue";
+import createRouter from "./lib/router.js";
+
+const router = createRouter(createWebHistory());
+const store = createPinia();
+const myApp = createApp(App);
+myApp
+  .use(Quasar, {
+    plugins: { AppFullscreen }, // import Quasar plugins and add here
+  })
+  .use(router)
+  .use(store);
+myApp.mount("#app");

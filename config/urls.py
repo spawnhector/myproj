@@ -28,7 +28,7 @@ if settings.DEBUG:
 # API URLS
 urlpatterns += [
     # API base url
-    path("v1/", include("myproj.users.api.urls")),
+    path("api/v1/", include("myproj.users.api.urls")),
     # DRF auth token
     path("auth-token/", obtain_auth_token),
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),

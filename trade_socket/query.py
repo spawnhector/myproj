@@ -4,6 +4,7 @@ def createTables(get_connection,psycopg2,commands):
     try:
         for command in commands:
             cur.execute(command)
+        print("tables created.")
         cur.close()
         conn.commit()
     except (Exception, psycopg2.DatabaseError) as error:

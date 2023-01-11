@@ -21,6 +21,18 @@ import psycopg2
 
 User = get_user_model()
 
+class UserView(generics.CreateAPIView):
+    def get(self, request, format=None):
+        # serializer_class = UserSerializer
+        # queryset = User.objects.all()
+        # lookup_field = "username"
+        serializer = UserSerializer(request.user, context={"request": request})
+        return Response({
+            'status': 200,
+            'data': {
+                'user': serializer.data
+            }
+        })
 
 class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
     serializer_class = UserSerializer
@@ -47,11 +59,6 @@ class RegisterView(generics.CreateAPIView):
             'status': 200,
             'data': {
                 'message': 'user created',
-                'user_info': {
-                        'id': user.id,
-                        'username': user.username,
-                        'email': user.email
-                    },
                 'token': token
             }
         })
@@ -66,6 +73,7 @@ class LoginView(KnoxLoginView):
         return super(LoginView, self).post(request, format=None)
 
 class SignalsView(generics.CreateAPIView):
+    permission_classes = (permissions.AllowAny,)
     def get(self, request, format=None):
         conn = None
         def get_connection():
@@ -82,7 +90,7 @@ class SignalsView(generics.CreateAPIView):
         conn = get_connection()
         if conn:
             cur = conn.cursor()
-            cur.execute("SELECT * FROM signals;")
+            cur.execute("SELECT pairs.pair_id, pairs.pair_symbol, signals.trade_price FROM public.pairs INNER JOIN pair_signal on pair_signal.pair_id = pairs.pair_id INNER JOIN signals ON signals.signal_id = pair_signal.signal_id;")
             row = cur.fetchall()
             cur.close()
             return Response({

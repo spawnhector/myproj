@@ -19,6 +19,7 @@ services:
       - postgres
     volumes:
       - .:/app:z
+    tty: true
     env_file:
       - ./.envs/.local/.django
       - ./.envs/.local/.postgres
@@ -47,6 +48,7 @@ services:
       - my_socket_ipc_network
 
   pgadmin:
+    container_name: pgadmin
     image: dpage/pgadmin4
     depends_on:
       - postgres
@@ -77,19 +79,33 @@ services:
   #     - my_socket_ipc_network
   #   command: /start-docs
 
+  # frontend:
+  #   container_name: frontend
+  #   restart: always
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   image: hectperscalper_frontend_image
+  #   depends_on:
+  #     - django
+  #   volumes:
+  #     - ./frontend/nginx:/etc/nginx/conf.d
+  #   ports:
+  #     - 81:80
+  #   networks:
+  #     - my_socket_ipc_network
   frontend:
     container_name: frontend
-    restart: always
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: hectperscalper_frontend_image
-    depends_on:
-      - django
-    volumes:
-      - ./frontend/nginx:/etc/nginx/conf.d
+    # build: ./frontend
+    image: node:lts
+    working_dir: /app/
+    entrypoint: /bin/bash
     ports:
       - 81:80
+    volumes:
+      - ./frontend/:/app:z
+      # - ./frontend/nginx:/etc/nginx/conf.d
+    tty: true
     networks:
       - my_socket_ipc_network
 
@@ -101,7 +117,7 @@ services:
       dockerfile: Dockerfile
     image: trade_socket:latest
     ports:
-      - "8080:8080"
+      - "8080-8099:8080-8099"
     depends_on:
       - postgres
     env_file:
@@ -112,3 +128,4 @@ services:
     volumes:
       - ./trade_socket:/trade_socket:z
       - ./myproj:/app/myproj:z
+    tty: true

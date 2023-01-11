@@ -14,7 +14,7 @@ RUN pip wheel --wheel-dir /usr/src/trade_socket/wheels  \
 
 FROM python as python-run-stage
 
-EXPOSE 8080
+EXPOSE 8080-8099:8080-8099
 ARG BUILD_ENVIRONMENT=local
 ARG APP_HOME=/trade_socket
 

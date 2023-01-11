@@ -1,15 +1,21 @@
-FROM node:lts-alpine as build
-WORKDIR /app
-ENV PATH /app/node_modules/.bin:$PATH
+FROM node:lts as build
+# RUN addgroup app && adduser -S -G app app
+WORKDIR /var/www/html/app/
 COPY package.json ./
-RUN npm i --silent
-COPY . ./
-RUN npm run build
+RUN npm install -g --unsafe-perm=true --allow-root
+RUN  npm install
+RUN npm install -g serve
+RUN chown -R node /var/www/html/app/
+EXPOSE 8080
+# RUN mkdir -p node_modules/.cache && chmod -R 777 node_modules/.cache
+FROM node:lts as stage
+# RUN addgroup app && adduser -S -G app app
+WORKDIR /var/www/html/app/
+# ENTRYPOINT /bin/bash
+USER node
+CMD ["npm", "run", "dev"]
 
-FROM nginx:1.21
-RUN apt update --fix-missing \
-    && apt-get install -y wget \
-    && rm -rf /var/lib/apt/lists/*
-RUN rm -rf /usr/share/nginx/html/*
-COPY --from=build /app/nginx/nginx.conf /etc/nginx/conf.d/default.conf:ro
-COPY --from=build /app/dist /usr/share/nginx/html
+
+# docker-composer up # to start the compilation process
+# to install npm package run
+# docker-compose exec web npm i bootstrap
