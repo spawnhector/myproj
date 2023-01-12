@@ -2,6 +2,7 @@ import psycopg2
 import threading
 import socket
 import asyncio
+import json
 import websockets
 from datetime import datetime
 
@@ -16,18 +17,6 @@ def get_connection():
         )
     except:
         return False
-
-async def socketAction(websocket, path):
-    print('getting message')
-    async for message in websocket:
-        print(f'Received: {message}')
-        await websocket.send(message)
-
-def create_web_socket(port):
-    start_server = websockets.serve(socketAction, HOST, port)
-    print(f"websocket created and waiting on host: {HOST} port: {port}")
-    asyncio.get_event_loop().run_until_complete(start_server)
-    asyncio.get_event_loop().run_forever()
 
 def create_socket(port):
     try:
@@ -79,6 +68,35 @@ if conn:
     insertPairs(get_connection,psycopg2,pair_list())
 else:
     print("Connection to the PostgreSQL encountered and error.")
+
+def getSignals():
+    conn = get_connection()
+    if conn:
+        cur = conn.cursor()
+        cur.execute("SELECT pairs.pair_id, pairs.pair_symbol, signals.trade_price FROM public.pairs INNER JOIN pair_signal on pair_signal.pair_id = pairs.pair_id INNER JOIN signals ON signals.signal_id = pair_signal.signal_id;")
+        row = cur.fetchall()
+        cur.close()
+        return {
+            'pairs': row,
+        }
+    else:
+        return {
+            'data': {
+                'error': "Connection to the PostgreSQL encountered and error.",
+            }
+        }
+
+async def socketAction(websocket, path):
+    async for message in websocket:
+        print(f'Received: {message}')
+        signals = json.dumps(getSignals())
+        await websocket.send(signals)
+
+def create_web_socket(port):
+    start_server = websockets.serve(socketAction, HOST, port)
+    print(f"websocket created and waiting on host: {HOST} port: {port}")
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
 
 def updateTradeDataBase(msg):
     result = checkMsg(msg,datetime)

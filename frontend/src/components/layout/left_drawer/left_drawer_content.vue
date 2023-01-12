@@ -36,7 +36,8 @@ export default {
     },
     data: () => ({
         items: [],
-        nextNum: 6
+        nextNum: 6,
+        testCounter: 0
     }),
     beforeMount() {
         this.getSignals()
@@ -78,13 +79,36 @@ export default {
             }, {});
             return result;
         },
+        socketAction(socket) {
+            // you can send message to the server once the connection is open
+            socket.send(`testing counter ${this.testCounter}`);
+            this.testCounter++
+        },
         getSignals: function () {
             let _this = this;
-            GetSignals().then(res => {
-                _this.items = _this.groupArray(res.data.pairs, 1);
-            }, err => {
-                console.log('signal err', err)
-            })
+            const socket = new WebSocket('ws://localhost:8080');
+            socket.onopen = function (event) {
+                console.log('WebSocket is open now.');
+                _this.socketAction(socket);
+            };
+            socket.onmessage = function (event) {
+                let data = JSON.parse(event.data)
+                _this.items = _this.groupArray(data.pairs, 1);
+                console.log(data);
+                // _this.socketAction(socket);
+            };
+            socket.onclose = function (event) {
+                console.log('WebSocket is closed now.');
+            };
+            socket.onerror = function (error) {
+                console.error(`WebSocket error: ${error}`);
+            };
+            // let _this = this;
+            // GetSignals().then(res => {
+            //     _this.items = _this.groupArray(res.data.pairs, 1);
+            // }, err => {
+            //     console.log('signal err', err)
+            // })
         }
     }
 }
