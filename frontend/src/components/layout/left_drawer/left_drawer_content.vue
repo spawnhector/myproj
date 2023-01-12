@@ -5,7 +5,8 @@
                 <ul class="list-group">
                     <div class="bg-dark-container text-white">
                         <q-list dark>
-                            <q-expansion-item v-for="(signals, pair) in items" v-bind:key="pair" :label="pair">
+                            <q-expansion-item v-show="showSimulatedReturnData" v-for="(signals, pair) in items"
+                                v-bind:key="pair" :label="pair">
                                 <q-card class="bg-grey-9">
                                     <q-card-section>
                                         <transition-group name="list-complete" tag="li">
@@ -17,6 +18,9 @@
                                     </q-card-section>
                                 </q-card>
                             </q-expansion-item>
+                            <q-inner-loading :showing="visible">
+                                <q-spinner-gears size="50px" color="primary" />
+                            </q-inner-loading>
                         </q-list>
                     </div>
                 </ul>
@@ -37,9 +41,13 @@ export default {
     data: () => ({
         items: [],
         nextNum: 6,
-        testCounter: 0
+        testCounter: 0,
+        visible: false,
+        showSimulatedReturnData: false
     }),
     beforeMount() {
+        this.visible = true
+        this.showSimulatedReturnData = false
         this.getSignals()
     },
     methods: {
@@ -94,6 +102,8 @@ export default {
             socket.onmessage = function (event) {
                 let data = JSON.parse(event.data)
                 _this.items = _this.groupArray(data.pairs, 1);
+                _this.visible = false;
+                _this.showSimulatedReturnData = true;
                 console.log(data);
                 // _this.socketAction(socket);
             };

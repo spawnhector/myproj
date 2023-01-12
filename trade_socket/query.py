@@ -67,3 +67,13 @@ def getPair(get_connection,psycopg2,pair):
     finally:
         if conn is not None:
             conn.close()
+
+def tradeSignal(get_connection):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT pairs.pair_id, pairs.pair_symbol, signals.trade_price FROM public.pairs INNER JOIN pair_signal on pair_signal.pair_id = pairs.pair_id INNER JOIN signals ON signals.signal_id = pair_signal.signal_id;")
+    row = cur.fetchall()
+    cur.close()
+    return {
+        'pairs': row,
+    }

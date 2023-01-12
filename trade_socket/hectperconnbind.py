@@ -18,24 +18,47 @@ def get_connection():
     except:
         return False
 
-def create_socket(port):
+def create_signal_socket(port):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     except socket.error as err:
         print("socket creation failed with error %s" %(err))
-
     try:
-        print(f"[INFO]\listen on host {HOST} {port} \n")
+        print(f"[INFO]\listen for signals on {HOST}:{port} \n")
         s.bind((HOST, port))
         s.listen()
         connection, addr = s.accept()
-        print("[INFO]\Connection establish with:", addr)
+        print("[INFO]\Connection establish with signal server on :", addr)
         msg = ""
         while not "END CONNECTION\0" in msg:
             msg = connection.recv(1024).decode()
             if not msg:
                     break
             updateTradeDataBase(msg)
+        connection.close()
+        s.close()
+    except socket.error:
+        print("there was an error resolving the host")
+        sys.exit()
+
+def create_currency_data_socket(port):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error as err:
+        print("socket creation failed with error %s" %(err))
+    try:
+        print(f"[INFO]\listen for currency data on {HOST}:{port} \n")
+        s.bind((HOST, port))
+        s.listen()
+        connection, addr = s.accept()
+        print("[INFO]\Connection establish with currency data server on :", addr)
+        msg = ""
+        while not "END CONNECTION\0" in msg:
+            msg = connection.recv(1024).decode()
+            if not msg:
+                    break
+            print(msg)
+            # updateTradeDataBase(msg)
         connection.close()
         s.close()
     except socket.error:
@@ -72,13 +95,7 @@ else:
 def getSignals():
     conn = get_connection()
     if conn:
-        cur = conn.cursor()
-        cur.execute("SELECT pairs.pair_id, pairs.pair_symbol, signals.trade_price FROM public.pairs INNER JOIN pair_signal on pair_signal.pair_id = pairs.pair_id INNER JOIN signals ON signals.signal_id = pair_signal.signal_id;")
-        row = cur.fetchall()
-        cur.close()
-        return {
-            'pairs': row,
-        }
+        return tradeSignal(get_connection)
     else:
         return {
             'data': {
@@ -105,15 +122,22 @@ def updateTradeDataBase(msg):
         if row:
             pair_id,pair_symbol = row
             insertSignals(get_connection,psycopg2,pair_id,result)
+        else:
+            print("Connection to the PostgreSQL encountered and error.")
 
 
-# Create socket connection
-portEnd = 8081 + len(pair_list())
-for i in range(8081, portEnd):
-    client_socket_thread = threading.Thread(target=create_socket, args=(i,))
-    client_socket_thread.start()
+# Create socket connection for signals
+portEnd = 8082 + len(pair_list())
+for i in range(8082, portEnd):
+    signal_socket_thread = threading.Thread(target=create_signal_socket, args=(i,))
+    signal_socket_thread.start()
 
-# Create websocket connection
+# Create socket connection for currency data
+currencyDataPort = 8081
+currency_data_socket_thread = threading.Thread(target=create_currency_data_socket, args=(currencyDataPort,))
+currency_data_socket_thread.start()
+
+# Create websocket connection for frontend communication
 websocketPort = 8080
 create_web_socket(websocketPort)
 # client_websocket_thread = threading.Thread(target=create_web_socket, args=(websocketPort,))
