@@ -6,6 +6,7 @@ import json
 import websockets
 from datetime import datetime
 
+currencyDataFile = "currencyData.txt"
 HOST = socket.gethostbyname('trade_socket_server')
 def get_connection():
     try:
@@ -34,7 +35,6 @@ def create_signal_socket(port):
             msg = connection.recv(1024).decode()
             if not msg:
                     break
-            print(port,msg)
             updateTradeDataBase(msg)
         connection.close()
         s.close()
@@ -58,8 +58,8 @@ def create_currency_data_socket(port):
             msg1 = connection.recv(1024).decode()
             if not msg1:
                     break
-            print(msg1)
-            # updateTradeDataBase(msg1)
+            with open(currencyDataFile, "w") as file:
+                file.write(msg1)
         connection.close()
         s.close()
     except socket.error:
@@ -99,16 +99,18 @@ def getSignals():
         return tradeSignal(get_connection)
     else:
         return {
-            'data': {
-                'error': "Connection to the PostgreSQL encountered and error.",
-            }
+            'error': "Connection to the PostgreSQL encountered and error.",
         }
 
 async def socketAction(websocket, path):
     async for message in websocket:
-        print(f'Received: {message}')
-        signals = json.dumps(getSignals())
-        await websocket.send(signals)
+        with open(currencyDataFile, "r") as file:
+            contents = file.read()
+            data = json.dumps({
+                'pairs': getSignals(),
+                'currencyData': convertToObject(contents)
+            })
+            await websocket.send(data)
 
 def create_web_socket(port):
     start_server = websockets.serve(socketAction, HOST, port)

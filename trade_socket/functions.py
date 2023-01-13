@@ -23,3 +23,12 @@ def checkMsg(msg,datetime):
         'take_profit': take_profit,
         'trade_date': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
     }
+
+def convertToObject(data):
+    data = data.strip(',')
+    data = data.split(',')
+    data_dict = {}
+    for item in data:
+        key, value = item.split(':')
+        data_dict[key] = float(value)
+    return data_dict

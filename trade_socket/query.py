@@ -74,6 +74,4 @@ def tradeSignal(get_connection):
     cur.execute("SELECT pairs.pair_id, pairs.pair_symbol, signals.trade_price FROM public.pairs INNER JOIN pair_signal on pair_signal.pair_id = pairs.pair_id INNER JOIN signals ON signals.signal_id = pair_signal.signal_id;")
     row = cur.fetchall()
     cur.close()
-    return {
-        'pairs': row,
-    }
+    return row
