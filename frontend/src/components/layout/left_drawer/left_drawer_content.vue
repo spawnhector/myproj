@@ -12,7 +12,7 @@
                                         <transition-group name="list-complete" tag="li">
                                             <li v-for="signal in signals" v-bind:key="signal[2]"
                                                 class="list-group-item list-complete-item">
-                                                <signal-list :signal="signal[2]" />
+                                                <signal-list :signal="signal[2]" :percent="signal[3]" />
                                             </li>
                                         </transition-group>
                                     </q-card-section>
@@ -92,6 +92,25 @@ export default {
             socket.send(`testing counter ${this.testCounter}`);
             this.testCounter++
         },
+        calculatePercentage(obj, arr) {
+            for (const key in obj) {
+                if (key === arr[1]) {
+                    var initial = obj[key];
+                }
+            }
+            var diff = initial - arr[2];
+            var percent = (diff / initial) * 100;
+            return percent;
+        },
+        addPercentage(obj, obj2) {
+            let _this = this;
+            for (const key in obj) {
+                obj[key].forEach(subArr => {
+                    subArr.push(_this.calculatePercentage(obj2, subArr));
+                });
+            }
+            return obj;
+        },
         getSignals: function () {
             let _this = this;
             const socket = new WebSocket('ws://localhost:8080');
@@ -104,7 +123,7 @@ export default {
                 _this.items = _this.groupArray(data.pairs, 1);
                 _this.visible = false;
                 _this.showSimulatedReturnData = true;
-                console.log(data);
+                console.log(_this.addPercentage(_this.groupArray(data.pairs, 1), data.currencyData));
                 // _this.socketAction(socket);
             };
             socket.onclose = function (event) {
