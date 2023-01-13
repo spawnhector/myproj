@@ -34,6 +34,7 @@ def create_signal_socket(port):
             msg = connection.recv(1024).decode()
             if not msg:
                     break
+            print(port,msg)
             updateTradeDataBase(msg)
         connection.close()
         s.close()
@@ -52,13 +53,13 @@ def create_currency_data_socket(port):
         s.listen()
         connection, addr = s.accept()
         print("[INFO]\Connection establish with currency data server on :", addr)
-        msg = ""
-        while not "END CONNECTION\0" in msg:
-            msg = connection.recv(1024).decode()
-            if not msg:
+        msg1 = ""
+        while not "END CONNECTION\0" in msg1:
+            msg1 = connection.recv(1024).decode()
+            if not msg1:
                     break
-            print(msg)
-            # updateTradeDataBase(msg)
+            print(msg1)
+            # updateTradeDataBase(msg1)
         connection.close()
         s.close()
     except socket.error:
