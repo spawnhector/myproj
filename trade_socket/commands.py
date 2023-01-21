@@ -8,10 +8,12 @@ def commands():
         """,
         """ CREATE TABLE signals (
                 signal_id SERIAL PRIMARY KEY,
+                trade_ticket VARCHAR(255) NOT NULL,
                 trade_type VARCHAR(255) NOT NULL,
                 trade_price VARCHAR(255) NOT NULL,
                 take_profit VARCHAR(255) NOT NULL,
-                trade_date VARCHAR(255) NOT NULL
+                trade_date VARCHAR(255) NOT NULL,
+                trade_status VARCHAR(255) NOT NULL
                 )
         """,
         """

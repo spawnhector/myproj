@@ -1,23 +1,25 @@
 <template>
-    <div id="vue-list-animation-test" class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <ul class="list-group">
-                    <transition-group name="list-complete" tag="li">
-                        <li v-for="item in items" v-bind:key="item" class="list-group-item list-complete-item rounded">
-                            item {{ item }}</li>
-                    </transition-group>
-                </ul>
-            </div>
-            <!-- <div class="col-12 text-center my-3">
+    <q-scroll-area class="fit side-container">
+        <div id="vue-list-animation-test" class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-12">
+                    <ul class="list-group">
+                        <transition-group name="list-complete" tag="li">
+                            <li v-for="item in items" v-bind:key="item"
+                                class="list-group-item list-complete-item rounded"> item {{ item }}</li>
+                        </transition-group>
+                    </ul>
+                </div>
+                <!-- <div class="col-12 text-center my-3">
                 <div class="btn-group" role="group" aria-label="Basic example">
                     <button @click="add" type="button" class="btn btn-secondary">Add</button>
                     <button @click="shuffle" type="button" class="btn btn-secondary">Shuffle</button>
                     <button @click="remove" type="button" class="btn btn-secondary">Remove</button>
                 </div>
             </div> -->
+            </div>
         </div>
-    </div>
+    </q-scroll-area>
 </template>
 
 <script>

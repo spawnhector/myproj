@@ -6,6 +6,33 @@ import json
 import websockets
 from datetime import datetime
 
+
+class RateLimiter:
+    def __init__(self, rate, per):
+        self.rate = rate
+        self.per = per
+        self.tokens = rate
+        self.last_check = None
+
+    async def acquire(self):
+        now = asyncio.get_event_loop().time()
+        if self.last_check is not None:
+            elapsed = now - self.last_check
+            self.tokens += elapsed * (self.rate / self.per)
+            self.tokens = min(self.tokens, self.rate)
+        self.last_check = now
+        if self.tokens < 1:
+            await asyncio.sleep((1 - self.tokens) * self.per)
+            self.tokens = 1
+        else:
+            self.tokens -= 1
+
+async def echo(websocket, path):
+    rate_limiter = RateLimiter(10, 1) # 10 messages per second
+    async for message in websocket:
+        await rate_limiter.acquire()
+        await websocket.send(message)
+
 currencyDataFile = "currencyData.txt"
 HOST = socket.gethostbyname('trade_socket_server')
 def get_connection():
@@ -34,7 +61,8 @@ def create_signal_socket(port):
         while not "END CONNECTION\0" in msg:
             msg = connection.recv(1024).decode()
             if not msg:
-                    break
+                break
+            # print(msg)
             updateTradeDataBase(msg)
         connection.close()
         s.close()
@@ -103,6 +131,7 @@ def getSignals():
         }
 
 async def socketAction(websocket, path):
+    rate_limiter = RateLimiter(10, 1) # 10 messages per second
     async for message in websocket:
         with open(currencyDataFile, "r") as file:
             contents = file.read()
@@ -110,6 +139,7 @@ async def socketAction(websocket, path):
                 'pairs': getSignals(),
                 'currencyData': convertToObject(contents)
             })
+            await rate_limiter.acquire()
             await websocket.send(data)
 
 def create_web_socket(port):

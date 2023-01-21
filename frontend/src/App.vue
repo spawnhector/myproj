@@ -32,7 +32,9 @@ export default {
     }
   },
   beforeMount() {
-    this.checkAuth()
+    this.auth.getToken()
+    // this.checkAuth()
+    // console.log(this.auth.isAuthenticatedd)
   },
   created() {
     let _this = this
@@ -70,6 +72,7 @@ export default {
     checkAuth() {
       // this.MainApp.is_mobile;
       let _this = this
+      console.log('checking auth')
       _this.auth.checkAuth()
     }
   },

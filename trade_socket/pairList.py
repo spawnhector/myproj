@@ -2,5 +2,10 @@ def pair_list():
     return [
         ('USDJPY',),
         ('GBPUSD',),
-        ('NZDJPY',)
+        ('NZDJPY',),
+        ('AUDUSD',),
+        ('EURUSD',),
+        ('NZDUSD',),
+        ('USDCAD',),
+        ('USDCHF',)
     ]

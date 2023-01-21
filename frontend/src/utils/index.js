@@ -92,11 +92,10 @@ export function postFetch(data, url) {
       .catch((error) => reject(error));
   });
 }
-export function postTokenFetch(token, data, url, post_type) {
+export function postTokenFetch(token, data, url) {
   var myHeaders = new Headers();
-  myHeaders.append("X-CSRFToken", csrf);
-  myHeaders.append("Authorization", `Bearer ${token}`);
-  if (post_type == "text") myHeaders.append("Content-Type", "application/json");
+  myHeaders.append("Accept", "application/json");
+  if (token) myHeaders.append("Authorization", `Token ${token}`);
   var requestOptions = {
     method: "POST",
     headers: myHeaders,

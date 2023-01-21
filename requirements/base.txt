@@ -23,3 +23,6 @@ drf-spectacular==0.24.2  # https://github.com/tfranzel/drf-spectacular
 
 django-rest-knox
 boto3
+channels[daphne]
+channels-redis
+channels_redis

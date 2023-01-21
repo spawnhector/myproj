@@ -104,10 +104,10 @@ export default {
                 formData.append("password", this.password);
                 UserLogin(formData).then(res => {
                     _this.auth.setToken(res.token)
-                    if (_this.auth.getToken()) {
+                    _this.auth.getToken().then(res => {
                         _this.auth.setAuth('authLoader', false);
                         _this.mainApp.setApp('authModal', false)
-                    }
+                    })
                 }, err => {
                     _this.requestError = `error-count-${_this.errorCount}/*/${err.message[0]}`;
                     _this.errorCount++;

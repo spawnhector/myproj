@@ -1,54 +1,61 @@
 <template>
-    <div id="vue-list-animation-test" class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-12 left_drawer_container">
-                <ul class="list-group">
-                    <div class="bg-dark-container text-white">
-                        <q-list dark>
-                            <q-expansion-item v-show="showSimulatedReturnData" v-for="(signals, pair) in items"
-                                v-bind:key="pair" :label="pair">
-                                <q-card class="bg-grey-9">
-                                    <q-card-section>
-                                        <transition-group name="list-complete" tag="li">
-                                            <li v-for="signal in signals" v-bind:key="signal[2]"
-                                                class="list-group-item list-complete-item">
-                                                <signal-list :signal="signal[2]" :percent="signal[3]" />
-                                            </li>
-                                        </transition-group>
-                                    </q-card-section>
-                                </q-card>
-                            </q-expansion-item>
-                            <q-inner-loading :showing="visible">
-                                <q-spinner-gears size="50px" color="primary" />
-                            </q-inner-loading>
-                        </q-list>
-                    </div>
-                </ul>
+    <q-scroll-area class="fit side-container">
+        <div id="vue-list-animation-test" class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-12 left_drawer_container">
+                    <ul class="list-group">
+                        <div class="bg-dark-container text-white">
+                            <q-list dark>
+                                <q-expansion-item v-show="showSimulatedReturnData" v-for="(signals, pair) in items"
+                                    v-bind:key="pair" expand-separator default-opened>
+                                    <template v-slot:header>
+                                        <ListHeader :pair="pair" :signals="signals" />
+                                    </template>
+                                    <q-card class="bg-grey-9">
+                                        <q-card-section class="signal-card">
+                                            <transition-group name="list-complete" tag="li">
+                                                <li v-for="signal in signals" v-bind:key="signal[2]"
+                                                    class="list-group-item list-complete-item">
+                                                    <signal-list :signal="signal[2]" :percent="signal[3]" />
+                                                </li>
+                                            </transition-group>
+                                        </q-card-section>
+                                    </q-card>
+                                </q-expansion-item>
+                                <q-inner-loading :showing="visible">
+                                    <q-spinner-gears size="50px" color="primary" />
+                                </q-inner-loading>
+                            </q-list>
+                        </div>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
+    </q-scroll-area>
 </template>
 
 <script>
 import { GetSignals } from '../../../utils/apiRequest';
+import ListHeader from './listheader.vue';
 import signalList from './listSignal.vue';
 
 export default {
     name: 'LeftDrawerContent',
     components: {
-        signalList
+        signalList, ListHeader
     },
     data: () => ({
-        items: [],
+        items: {},
         nextNum: 6,
-        testCounter: 0,
         visible: false,
-        showSimulatedReturnData: false
+        showSimulatedReturnData: false,
+        socket: null,
+        requests: 0,
+        limit: 1000, // number of requests per minute
+        interval: 60000, // interval in milliseconds
+        lastCheck: Date.now(),
     }),
-    beforeMount() {
-        this.visible = true
-        this.showSimulatedReturnData = false
-        this.getSignals()
+    computed: {
     },
     methods: {
         randomIndex() {
@@ -70,8 +77,20 @@ export default {
             }
             return array;
         },
-        shuffle: function () {
-            this.items = this.arrShuffle(this.items);
+        shuffle: function (newVal) {
+            let sortedObj = {};
+            let sortedObj1 = {};
+            let entries = Object.entries(newVal);
+            // sort sub-array in object
+            entries.forEach(([key, value]) => {
+                sortedObj[key] = value.sort((a, b) => a[2] > b[2] ? 1 : -1);
+            });
+            entries = Object.entries(sortedObj);
+            this.items = Object.fromEntries(entries.sort((a, b) => {
+                let sumA = a[1].reduce((acc, current) => acc + current[3], 0);
+                let sumB = b[1].reduce((acc, current) => acc + current[3], 0);
+                return sumB - sumA;
+            }));
         },
         label() {
             // return <q-icon name='trending_up' class='text-green' />
@@ -87,10 +106,17 @@ export default {
             }, {});
             return result;
         },
-        socketAction(socket) {
-            // you can send message to the server once the connection is open
-            socket.send(`testing counter ${this.testCounter}`);
-            this.testCounter++
+        socketAction() {
+            if (this.requests >= this.limit) {
+                this.socket.close()
+                return;
+            }
+            if (Date.now() - this.lastCheck > this.interval) {
+                this.lastCheck = Date.now();
+                this.requests = 0;
+            }
+            this.socket.send(`testing counter`);
+            this.requests++;
         },
         calculatePercentage(obj, arr) {
             for (const key in obj) {
@@ -111,35 +137,38 @@ export default {
             }
             return obj;
         },
-        getSignals: function () {
+        createWebSocket() {
             let _this = this;
-            const socket = new WebSocket('ws://localhost:8080');
-            socket.onopen = function (event) {
-                console.log('WebSocket is open now.');
-                _this.socketAction(socket);
+            _this.socket = new WebSocket('ws://localhost:8080');
+            _this.socket.onopen = function (event) {
+                _this.socketAction();
             };
-            socket.onmessage = function (event) {
+            _this.socket.onmessage = function (event) {
                 let data = JSON.parse(event.data)
                 _this.items = _this.groupArray(data.pairs, 1);
                 _this.visible = false;
                 _this.showSimulatedReturnData = true;
-                console.log(_this.addPercentage(_this.groupArray(data.pairs, 1), data.currencyData));
-                // _this.socketAction(socket);
+                _this.items = _this.addPercentage(_this.items, data.currencyData);
+                _this.shuffle(_this.items)
+                // console.log(_this.items)
+                _this.socketAction();
             };
-            socket.onclose = function (event) {
-                console.log('WebSocket is closed now.');
+            _this.socket.onclose = function (event) {
+                _this.createWebSocket()
             };
-            socket.onerror = function (error) {
+            _this.socket.onerror = function (error) {
                 console.error(`WebSocket error: ${error}`);
             };
-            // let _this = this;
-            // GetSignals().then(res => {
-            //     _this.items = _this.groupArray(res.data.pairs, 1);
-            // }, err => {
-            //     console.log('signal err', err)
-            // })
+        },
+        getSignals: function () {
+            this.createWebSocket()
         }
-    }
+    },
+    mounted() {
+        this.visible = true
+        this.showSimulatedReturnData = false
+        this.getSignals()
+    },
 }
 </script>
 <style lang="sass">
@@ -159,11 +188,16 @@ export default {
             display: block
         .list-group-item
             margin-bottom: 1px
+            border-bottom: 1px solid white
             background-color: #1A1A2A
             padding-left: 10px
         .q-card__section--vert
             padding: 0px
             .text-green
                 color: green
+        .signal-card
+            max-height: 200px
+            overflow-y: scroll
+            background-color: #1A1A2A
 
 </style>

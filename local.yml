@@ -129,3 +129,12 @@ services:
       - ./trade_socket:/trade_socket:z
       - ./myproj:/app/myproj:z
     tty: true
+
+  reddis:
+    container_name: reddis_layer
+    image: redis:5
+    ports:
+      - 6379:6379
+    tty: true
+    networks:
+      - my_socket_ipc_network

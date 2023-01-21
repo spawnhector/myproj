@@ -23,9 +23,13 @@ User = get_user_model()
 
 class UserView(generics.CreateAPIView):
     def get(self, request, format=None):
-        # serializer_class = UserSerializer
-        # queryset = User.objects.all()
-        # lookup_field = "username"
+        serializer_class = UserSerializer
+        queryset = User.objects.all()
+        lookup_field = "username"
+        def get_queryset(self, *args, **kwargs):
+            assert isinstance(self.request.user.id, int)
+            return self.queryset.filter(id=self.request.user.id)
+
         serializer = UserSerializer(request.user, context={"request": request})
         return Response({
             'status': 200,

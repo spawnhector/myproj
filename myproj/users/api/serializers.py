@@ -8,11 +8,11 @@ from myproj.users.models import NewUser
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewUser
-        fields = ["username", "full_name", "url"]
+        fields = ["username", "full_name"]
 
-        extra_kwargs = {
-            "url": {"view_name": "api:user-detail", "lookup_field": "username"}
-        }
+        # extra_kwargs = {
+        #     "url": {"view_name": "api:user-detail", "lookup_field": "username"}
+        # }
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:

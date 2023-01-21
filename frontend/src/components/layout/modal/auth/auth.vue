@@ -91,6 +91,9 @@ export default {
         this.$watch('auth.authLoader', (newVal) => {
             _this.mainLoader = newVal
         })
+        this.$watch('items.*', (newVal) => {
+            console.log('new', newVal)
+        })
     },
     computed: {
 

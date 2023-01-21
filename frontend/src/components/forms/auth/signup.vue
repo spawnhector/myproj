@@ -187,10 +187,10 @@ export default {
                 formData.append("password", this.password);
                 UserRegister(formData).then(res => {
                     _this.auth.setToken(res.data.token)
-                    if (_this.auth.getToken()) {
+                    _this.auth.getToken().then(res => {
                         _this.auth.setAuth('authLoader', false);
                         _this.mainApp.setApp('authModal', false)
-                    }
+                    })
                 }, err => {
                     _this.backToRegistration()
                     const keys = Object.keys(err);

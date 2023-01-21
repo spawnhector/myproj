@@ -14,7 +14,7 @@ RUN apt update --fix-missing && apt-get install --no-install-recommends -y \
   build-essential \
   # psycopg2 dependencies
   libpq-dev
-
+# RUN python -m pip install -U 'channels[dapne]' channels-redis
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements .
 

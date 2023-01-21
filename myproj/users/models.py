@@ -29,19 +29,19 @@ class NewUser(AbstractBaseUser,PermissionsMixin):
     username = models.CharField(max_length=150, unique=True)
     full_name = models.CharField(max_length=150)
     start_date = models.DateTimeField(default=timezone.now)
-    about = models.TextField(_('aboout'),max_length=150, blank=True)
+    about = models.TextField(_('about'),max_length=150, blank=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     objects = CustomAccountManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username','full_name']
 
-    def get_absolute_url(self):
-        """Get url for user's detail view.
+    # def get_absolute_url(self):
+    #     """Get url for user's detail view.
 
-        Returns:
-            str: URL for user detail.
+    #     Returns:
+    #         str: URL for user detail.
 
-        """
-        return reverse("users:detail", kwargs={"username": self.username})
+    #     """
+    #     return reverse("users:detail", kwargs={"username": self.username})
 

@@ -33,13 +33,15 @@ def insertSignals(get_connection,psycopg2,pair_id,result):
     conn = get_connection()
     cur = conn.cursor()
     try:
-        signal_query = "INSERT INTO signals(trade_type,trade_price,take_profit,trade_date) VALUES(%s,%s,%s,%s) RETURNING signal_id;"
+        signal_query = "INSERT INTO signals(trade_ticket,trade_type,trade_price,take_profit,trade_date,trade_status) VALUES(%s,%s,%s,%s,%s,%s) RETURNING signal_id;"
         assign_pair = "INSERT INTO pair_signal(pair_id,signal_id) VALUES(%s,%s);"
         cur.execute(signal_query,(
+            result['trade_ticket'],
             result['trade_type'],
             result['trade_price'],
             result['take_profit'],
-            result['trade_date']
+            result['trade_date'],
+            result['trade_status']
             ))
         # get the signal id
         signal_id = cur.fetchone()[0]

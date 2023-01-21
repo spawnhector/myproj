@@ -1,20 +1,12 @@
 <template>
     <div>
         <navHeader />
-        <q-drawer v-model="drawerLeft" :width="150" :breakpoint="700" behavior="desktop" bordered class="bg-grey-3">
-            <q-scroll-area class="fit">
-                <div>
-                    <leftDrawerContent />
-                </div>
-            </q-scroll-area>
+        <q-drawer v-model="drawerLeft" :width="250" :breakpoint="700" behavior="desktop" bordered class="bg-grey-3">
+            <leftDrawerContent />
         </q-drawer>
-        <q-drawer side="right" v-model="drawerRight" bordered :width="150" :breakpoint="500" behavior="desktop"
+        <q-drawer side="right" v-model="drawerRight" bordered :width="250" :breakpoint="500" behavior="desktop"
             class="bg-grey-3">
-            <q-scroll-area class="fit">
-                <div class="">
-                    <rightDrawerContent />
-                </div>
-            </q-scroll-area>
+            <rightDrawerContent />
         </q-drawer>
     </div>
 </template>
@@ -46,3 +38,8 @@ export default {
     }
 }
 </script>
+<style>
+.side-container {
+    background-color: #1A1A2A;
+}
+</style>

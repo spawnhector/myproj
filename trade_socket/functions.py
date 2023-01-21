@@ -3,6 +3,7 @@ def checkMsg(msg,datetime):
     trade_type = ''
     trade_price = ''
     take_profit = ''
+    trade_ticket = ''
 
     x = msg.split(",")
     for signal in x:
@@ -15,13 +16,17 @@ def checkMsg(msg,datetime):
             trade_price = xy[1]
         if xy[0] == 'take_profit':
             take_profit = xy[1]
+        if xy[0] == 'trade_ticket':
+            trade_ticket = xy[1]
 
     return {
         'currency': currency,
         'trade_type': trade_type,
         'trade_price': trade_price,
         'take_profit': take_profit,
-        'trade_date': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        'trade_date': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+        'trade_status': 'Open',
+        'trade_ticket': trade_ticket
     }
 
 def convertToObject(data):

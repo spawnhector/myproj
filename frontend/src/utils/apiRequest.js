@@ -6,7 +6,7 @@ import {
 } from './index.js';
 
 let backend = "http://localhost:8000";
-export const CheckIsAuth = (token) =>
+export const CheckAuthToken = (token) =>
   checkIsAuth(token, `${backend}/api/v1/user/`);
 export const UserLogin = (data) => loginFetch(data, `${backend}/api/v1/login/`);
 export const UserRegister = (data) =>
