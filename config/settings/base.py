@@ -243,10 +243,21 @@ EMAIL_TIMEOUT = 5
 # Django Admin URL.
 ADMIN_URL = "admin/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = [("""Ronald Hector""", "ronald.hector@myambergroup.com")]
+ADMINS = [("""Ronald Hector""", "spawnsam", "ronald.hector@myambergroup.com")]
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
-
+# Trade Currency
+PAIRLIST = [
+        ('USDJPY',),
+        ('GBPUSD',),
+        ('NZDJPY',),
+        ('AUDUSD',),
+        ('EURUSD',),
+        ('NZDUSD',),
+        ('USDCAD',),
+        ('USDCHF',)
+    ]
 # LOGGING
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#logging

@@ -1,3 +1,4 @@
 from django.contrib import admin
+from myproj.schannels.models import SChannel
 
-# Register your models here.
+admin.register(SChannel)

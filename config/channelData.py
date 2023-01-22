@@ -2,6 +2,9 @@
 import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from django.core import serializers
+# from myproj.schannels.serializers import ChannelSerializer
+from myproj.schannels.models import SChannel
 
 class ChannelDataConsumer(WebsocketConsumer):
     def connect(self):
@@ -22,7 +25,13 @@ class ChannelDataConsumer(WebsocketConsumer):
 
     # Receive message from room group
     def channel_data(self, event):
-        self.send(text_data=json.dumps({"message": 'here'}))
+        app_channel = SChannel.objects.all()
+        serialized_obj = serializers.serialize('python', app_channel)
+        channel_data= []
+        for dat in serialized_obj:
+            dat = list(dat.values())[1:]
+            channel_data.append(dat)
+        self.send(text_data=json.dumps(channel_data))
 
     def disconnect(self, close_code):
         pass
