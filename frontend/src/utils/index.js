@@ -50,8 +50,8 @@ export function getExteralFetch(url) {
 
 export function getTokenFetch(token, url) {
   var myHeaders = new Headers();
-  myHeaders.append("Authorization", `Bearer ${token}`);
-  myHeaders.append("X-CSRFToken", csrf);
+  myHeaders.append("Accept", "application/json");
+  myHeaders.append("Authorization", `Token ${token}`);
   var requestOptions = {
     method: "GET",
     headers: myHeaders,

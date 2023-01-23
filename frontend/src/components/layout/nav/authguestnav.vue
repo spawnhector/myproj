@@ -54,7 +54,10 @@ import { ref } from 'vue';
 
 import { fabGithub } from '@quasar/extras/fontawesome-v6';
 
-import { useAuthStore } from '../../../lib/store.js';
+import {
+  useAuthStore,
+  useMainAppStore,
+} from '../../../lib/store.js';
 import authnav from './auth.vue';
 import guestnav from './guest.vue';
 
@@ -76,9 +79,10 @@ export default {
         const filteredOptions = []
         const search = null // $refs.search
         const auth = useAuthStore()
-
+        const mainApp = useMainAppStore()
         return {
             auth: auth,
+            mainApp,
             mainloader: auth.authLoader,
             authdialog,
             maximizedToggle,
@@ -93,6 +97,9 @@ export default {
         let _this = this
         this.$watch('auth.authLoader', (authVal) => {
             _this.mainloader = authVal
+        })
+        this.$watch('mainApp.mainLoader', (Val) => {
+            _this.mainloader = Val
         })
     },
     methods: {

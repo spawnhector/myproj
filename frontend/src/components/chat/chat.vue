@@ -1,7 +1,7 @@
 <template>
     <div class="position-relative" :style="style">
         <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-            <q-layout v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3" container>
+            <q-layout v-if="channels" v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3" container>
                 <q-header elevated>
                     <q-toolbar class="bg-grey-3 text-black">
                         <q-btn round flat>
@@ -54,9 +54,11 @@
                     </q-toolbar>
                     <q-scroll-area style="height: calc(100% - 100px)">
                         <q-list style="width: 300px">
-                            <q-item class="left_drawer_container_items" v-for="(conversation, index) in conversations"
-                                :key="conversation.id" clickable v-ripple @click="setCurrentConversation(index)">
-                                <q-chip size="30px">
+                            <q-item-label header>Free Channel</q-item-label>
+                            <q-item class="left_drawer_container_items" v-for="(conversation) in freeChannels"
+                                :key="conversation.id" clickable v-ripple>
+                                <q-chip size="30px"
+                                    :class="{ active_left_drawer_container_items: link === conversation.id }">
                                     <q-avatar color="red" text-color="white"><span style="font-size:13px">{{
                                         conversation.channel
                                     }}</span></q-avatar>
@@ -75,6 +77,13 @@
                                     </q-item-section>
                                 </q-chip>
                             </q-item>
+                            <q-item-label header>Paid Channels</q-item-label>
+                            <q-intersection class="left_drawer_container_items"
+                                v-for="(conversation, index) in paidChannels" :key="conversation.id" clickable v-ripple
+                                transition="flip-right">
+                                <channelItems :index="index" :conversation="conversation" :link="link"
+                                    :skeleton="skeleton" type="paid" />
+                            </q-intersection>
                         </q-list>
                     </q-scroll-area>
                 </q-drawer>
@@ -101,47 +110,12 @@ import { useQuasar } from 'quasar';
 
 import {
   useAuthStore,
+  useChannelChat,
   useMainAppStore,
 } from '../../lib/store.js';
+import { GetChannels } from '../../utils/apiRequest';
+import channelItems from './channel/channel_items.vue';
 
-const conversations = [
-    {
-        id: 1,
-        channel: 'GBPUSD',
-        person: 'Razvan Stoenescu',
-        avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg',
-        caption: 'I\'m working on Quasar!',
-        time: '15:00',
-        sent: true
-    },
-    {
-        id: 2,
-        channel: 'USDJPY',
-        person: 'Dan Popescu',
-        avatar: 'https://cdn.quasar.dev/team/dan_popescu.jpg',
-        caption: 'I\'m working on Quasar!',
-        time: '16:00',
-        sent: true
-    },
-    {
-        id: 3,
-        channel: 'GBPUSD',
-        person: 'Jeff Galbraith',
-        avatar: 'https://cdn.quasar.dev/team/jeff_galbraith.jpg',
-        caption: 'I\'m working on Quasar!',
-        time: '18:00',
-        sent: true
-    },
-    {
-        id: 4,
-        channel: 'GBPUSD',
-        person: 'Allan Gaunt',
-        avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
-        caption: 'I\'m working on Quasar!',
-        time: '17:00',
-        sent: true
-    }
-]
 export default {
     name: 'ChatLayout',
     data: () => {
@@ -149,23 +123,37 @@ export default {
         const showSimulatedReturnData = false
         const $q = useQuasar()
         const auth = useAuthStore()
+        const channelChat = useChannelChat()
         let leftDrawerOpen = auth.isAuthenticated
         return {
             $q,
             auth,
+            channelChat,
             visible,
             showSimulatedReturnData,
             leftDrawerOpen,
             search: '',
             message: '',
-            currentConversationIndex: 0,
-            conversations: conversations,
-            socket: null
+            currentConversationIndex: channelChat.currentConversationIndex,
+            currentConversationType: channelChat.currentConversationType,
+            socket: null,
+            channels: false,
+            freeChannels: [],
+            paidChannels: [],
+            link: channelChat.link,
+            skeleton: true
         }
+    },
+    components: {
+        channelItems
     },
     computed: {
         currentConversation() {
-            return this.conversations[this.currentConversationIndex]
+            if (this.currentConversationType == 'free') {
+                return this.freeChannels[this.currentConversationIndex]
+            } else {
+                return this.paidChannels[this.currentConversationIndex]
+            }
         },
         style() {
             let _this = this
@@ -182,46 +170,66 @@ export default {
     created() {
         let _this = this;
         this.$watch('auth.isAuthenticated', (val) => {
+            this.getChatData()
             _this.leftDrawerOpen = val
         })
+        this.$watch('channelChat.link', (val) => {
+            _this.link = val
+        })
+        this.$watch('channelChat.currentConversationIndex', (val) => {
+            _this.currentConversationIndex = val
+        })
+        this.$watch('channelChat.currentConversationType', (val) => {
+            _this.currentConversationType = val
+        })
+
     },
     methods: {
-        setCurrentConversation(index) {
-            this.currentConversationIndex = index
-        },
         getChatData() {
+            let _this = this;
             this.visible = true
             this.showSimulatedReturnData = false
-            this.auth.getToken().then(res => {
-                this.visible = false
-                this.showSimulatedReturnData = true
-                this.getChatChannels()
+            this.auth.getToken().then(token => {
+                GetChannels(token).then(res => {
+                    let data = res.data.channels
+                    _this.link = 20
+                    _this.channels = data.length > 0 ? true : false;
+                    _this.freeChannels.push({
+                        id: 20,
+                        channel: "AUDUSD",
+                        person: 'Allan Gaunt',
+                        avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
+                        caption: 'I\'m working on Quasar!',
+                        time: '17:00',
+                        sent: true
+                    })
+                    data.map(val => {
+                        // console.log(val)
+                        let channel_data = val;
+                        let channel_id = channel_data.id;
+                        _this.paidChannels.push({
+                            id: channel_id,
+                            channel: channel_data.channel_name,
+                            person: 'Allan Gaunt',
+                            avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
+                            caption: 'I\'m working on Quasar!',
+                            time: '17:00',
+                            sent: true
+                        })
+                    })
+                    _this.skeleton = false;
+                    this.visible = false
+                    this.showSimulatedReturnData = true
+                }, err => {
+                    console.log(err)
+                })
             }, err => {
                 this.visible = false
                 this.showSimulatedReturnData = true
             })
         },
-        getChatChannels() {
-            let _this = this;
-            _this.socket = new WebSocket('ws://localhost:8000/ws/channel/all/');
-            _this.socket.onopen = function (event) {
-                _this.socket.send(`ping`);
-            };
-            _this.socket.onmessage = function (event) {
-                let data = JSON.parse(event.data)
-                console.log(data)
-                // _this.visible = false;
-            };
-            _this.socket.onclose = function (event) {
-                console.log('socket closed')
-            };
-            _this.socket.onerror = function (error) {
-                console.error(`WebSocket error: ${error}`);
-            };
-        },
     },
     mounted() {
-        this.getChatData()
     }
 }
 </script>
@@ -261,15 +269,11 @@ export default {
   .WAL
     &__drawer-open
       display: none
-.conversation__summary
-  margin-top: 4px
-.conversation__more
-  margin-top: 0!important
-  font-size: 1.4rem
-
 .q-item
-    padding: 0px !important
-
+    padding: 1px 0px !important
 .left_drawer_container_items
     left: -2px
+.q-chip
+    width: -webkit-fill-available
+
 </style>

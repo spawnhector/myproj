@@ -15,9 +15,13 @@ from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateMode
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.decorators import api_view
-from .serializers import UserSerializer, RegisterSerializer
+from django.core import serializers
+from myproj.schannels.models import SChannel
+from myproj.subscriber.models import Subscriber
+from .serializers import UserSerializer, RegisterSerializer, ChannelSerializer
 from datetime import datetime
 import psycopg2
+import json
 
 User = get_user_model()
 
@@ -111,3 +115,34 @@ class SignalsView(generics.CreateAPIView):
                     'error': "Connection to the PostgreSQL encountered and error.",
                 }
             })
+
+class ChannelsView(generics.CreateAPIView):
+    def get(self, request, format=None):
+        app_channel = SChannel.objects.all()
+        # serialized_obj = serializers.serialize('python', app_channel)
+        # channel_data= []
+        # for dat in serialized_obj:
+        #     dat = list(dat.values())[1:]
+        #     channel_data.append(dat)
+        channels = ChannelSerializer(app_channel,many=True)
+        return Response({
+            'status': 200,
+            'data': {
+                'channels': channels.data,
+            }
+        })
+
+class ChannelsSubscribeView(generics.CreateAPIView):
+    def post(self, request, format=None):
+        channel  = request.data['channel']
+        channel_type = request.data['channel_type']
+        app_channel = SChannel(id=channel)
+        subscriber = Subscriber.objects.add_subscriber(channel,request.user.id,channel_type)
+        app_channel.subscribers.add(subscriber.id)
+        return Response({
+            'status': 200,
+            'data': {
+                'message': 'subscriber added'
+                # 'channels': channel_data,
+            }
+        })

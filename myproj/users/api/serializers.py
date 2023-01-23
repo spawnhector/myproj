@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers,validators
 from myproj.users.models import NewUser
+from myproj.schannels.models import SChannel
+from myproj.subscriber.models import Subscriber
 
 # User = get_user_model()
 
@@ -40,3 +42,15 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         user = NewUser.objects.create_user(email,username,full_name,password)
         return user
+
+
+class SubscriberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscriber
+        fields = '__all__'
+
+class ChannelSerializer(serializers.ModelSerializer):
+    subscribers = SubscriberSerializer(many=True, read_only=True)
+    class Meta:
+        model = SChannel
+        fields = ('id','channel_name','subscribers')
