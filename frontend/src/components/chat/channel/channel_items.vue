@@ -13,35 +13,33 @@
             <q-chip size="30px">
                 <q-skeleton v-if="skeleton" type="QAvatar" class="chat_list_skeleton_avatar" />
                 <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{
-                    conversation.channel
+                    channel.channel
                 }}</span></q-avatar>
                 <q-item-section>
                     <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_top" />
-                    <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ conversation.person }}
+                    <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }}
                     </q-item-label>
-                    <q-item-label class="conversation__summary" caption>
-                        <q-icon name="check" v-if="conversation.sent" />
+                    <q-item-label class="channel__summary" caption>
+                        <q-icon name="check" v-if="channel.sent" />
                         <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_bottom" />
-                        <q-icon name="not_interested" v-if="conversation.deleted && !skeleton" /> {{
-                            conversation.caption
-                        }} </q-item-label>
+                        <q-icon name="not_interested" v-if="channel.deleted && !skeleton" /> {{ channel.caption }}
+                    </q-item-label>
                 </q-item-section>
             </q-chip>
         </div>
-        <q-chip v-if="!lock" size="30px" :class="{ active_left_drawer_container_items: link === conversation.id }"
-            @click="setCurrentConversation">
+        <q-chip v-if="!lock" size="30px" :class="{ active_left_drawer_container_items: link === channel.id }"
+            @click="setCurrentChannel">
             <q-skeleton v-if="skeleton" type="QAvatar" class="chat_list_skeleton_avatar" />
             <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{
-                conversation.channel
+                channel.channel
             }}</span></q-avatar>
             <q-item-section>
                 <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_top" />
-                <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ conversation.person }}
-                </q-item-label>
-                <q-item-label class="conversation__summary" caption>
-                    <q-icon name="check" v-if="conversation.sent" />
+                <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }} </q-item-label>
+                <q-item-label class="channel__summary" caption>
+                    <q-icon name="check" v-if="channel.sent" />
                     <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_bottom" />
-                    <q-icon name="not_interested" v-if="conversation.deleted && !skeleton" /> {{ conversation.caption }}
+                    <q-icon name="not_interested" v-if="channel.deleted && !skeleton" /> {{ channel.caption }}
                 </q-item-label>
             </q-item-section>
         </q-chip>
@@ -60,7 +58,7 @@ export default {
     name: 'ChannelItems',
     components: {
     },
-    props: ["index", "conversation", "link", "skeleton", "type"],
+    props: ["index", "channel", "link", "skeleton", "type"],
     data() {
         const channelChat = useChannelChat()
         const mainApp = useMainAppStore()
@@ -81,10 +79,10 @@ export default {
         hideSubscribe() {
             this.show_subscribe = false
         },
-        setCurrentConversation() {
+        setCurrentChannel() {
             this.channelChat.setState('link', this.link)
-            this.channelChat.setState('currentConversationType', this.type)
-            this.channelChat.setState('currentConversationIndex', this.index)
+            this.channelChat.setState('currentChannelType', this.type)
+            this.channelChat.setState('currentChannelIndex', this.index)
         },
         unlockChannel() {
             let _this = this
@@ -92,9 +90,8 @@ export default {
             this.mainApp.setApp('mainLoader', true)
             this.auth.getToken().then(token => {
                 let data = new FormData()
-                data.append('channel', _this.conversation.id)
+                data.append('channel', _this.channel.id)
                 data.append('channel_type', 'Paid')
-
                 SubscribeChannels(token, data).then(res => {
                     console.log(res)
                 }, err => {
@@ -148,6 +145,8 @@ export default {
         //         console.error(`WebSocket error: ${error}`);
         //     };
         // },
+    }, mounted() {
+        console.log(this.channel)
     }
 }
 </script>
@@ -186,7 +185,7 @@ export default {
         height: 20px
     .chat_list_skeleton_item_label_bottom
         height: 16px
-    .conversation__summary
+    .channel__summary
         margin-top: 4px
 
 </style>

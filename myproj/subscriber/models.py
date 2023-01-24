@@ -8,7 +8,7 @@ class SubscriberAccountManager(models.Manager):
             raise ValueError(_('You must specify a channel id'))
 
         schannels = SChannel(id=channel_id)
-        subscriber = self.model(channel_id=channel_id,user_id=user_id,channel_type=channel_type **other_fields)
+        subscriber = self.model(channel_id=channel_id,user_id=user_id,channel_type=channel_type, **other_fields)
         subscriber.save()
         schannels.subscribers.add(subscriber.id)
         return subscriber
@@ -16,7 +16,7 @@ class SubscriberAccountManager(models.Manager):
 class Subscriber(models.Model):
     channel = models.ForeignKey('schannels.SChannel',related_name='_subscriber', on_delete=models.CASCADE, null=True)
     user = models.ForeignKey('users.NewUser',related_name='_user', on_delete=models.CASCADE, null=True)
-    channel_type = models.CharField(max_length=150, unique=True)
+    channel_type = models.CharField(max_length=150)
     objects = SubscriberAccountManager()
     REQUIRED_FIELDS = ['channel_name']
 

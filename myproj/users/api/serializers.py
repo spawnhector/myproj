@@ -10,7 +10,7 @@ from myproj.subscriber.models import Subscriber
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewUser
-        fields = ["username", "full_name"]
+        fields = ["id","username", "full_name"]
 
         # extra_kwargs = {
         #     "url": {"view_name": "api:user-detail", "lookup_field": "username"}

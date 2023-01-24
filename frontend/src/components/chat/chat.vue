@@ -1,16 +1,17 @@
 <template>
     <div class="position-relative" :style="style">
         <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-            <q-layout v-if="channels" v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3" container>
+            <q-layout v-if="(channels_received) && (freeChannels.length > 0 || paidChannels.length > 0)"
+                v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3" container>
                 <q-header elevated>
                     <q-toolbar class="bg-grey-3 text-black">
                         <q-btn round flat>
                             <q-avatar>
-                                <img :src="currentConversation.avatar">
+                                <img :src="currentChannel.avatar">
                             </q-avatar>
                         </q-btn>
                         <span class="q-subtitle-1 q-pl-md"
-                            v-text="`${auth.isAuthenticated ? '@' + auth.user.username + ' - ' + currentConversation.channel : 'Guest'}`">
+                            v-text="`${auth.isAuthenticated ? '@' + auth.user.username + ' - ' + currentChannel.channel : 'Guest'}`">
                         </span>
                         <q-space />
                         <q-btn round flat icon="search" />
@@ -54,36 +55,40 @@
                     </q-toolbar>
                     <q-scroll-area style="height: calc(100% - 100px)">
                         <q-list style="width: 300px">
-                            <q-item-label header>Free Channel</q-item-label>
-                            <q-item class="left_drawer_container_items" v-for="(conversation) in freeChannels"
-                                :key="conversation.id" clickable v-ripple>
-                                <q-chip size="30px"
-                                    :class="{ active_left_drawer_container_items: link === conversation.id }">
-                                    <q-avatar color="red" text-color="white"><span style="font-size:13px">{{
-                                        conversation.channel
-                                    }}</span></q-avatar>
-                                    <q-item-section>
-                                        <q-item-label style="font-size:13px;" lines="1"> {{ conversation.person }}
-                                        </q-item-label>
-                                        <q-item-label class="conversation__summary" caption>
-                                            <q-icon name="check" v-if="conversation.sent" />
-                                            <q-icon name="not_interested" v-if="conversation.deleted" /> {{
-                                                conversation.caption
-                                            }} </q-item-label>
-                                    </q-item-section>
-                                    <q-item-section side>
-                                        <q-item-label caption> {{ conversation.time }} </q-item-label>
-                                        <q-icon name="keyboard_arrow_down" />
-                                    </q-item-section>
-                                </q-chip>
-                            </q-item>
-                            <q-item-label header>Paid Channels</q-item-label>
-                            <q-intersection class="left_drawer_container_items"
-                                v-for="(conversation, index) in paidChannels" :key="conversation.id" clickable v-ripple
-                                transition="flip-right">
-                                <channelItems :index="index" :conversation="conversation" :link="link"
-                                    :skeleton="skeleton" type="paid" />
-                            </q-intersection>
+                            <span v-if="(freeChannels.length > 0)">
+                                <q-item-label header>Free Channel</q-item-label>
+                                <q-item class="left_drawer_container_items" v-for="(conversation) in freeChannels"
+                                    :key="conversation.id" clickable v-ripple>
+                                    <q-chip size="30px"
+                                        :class="{ active_left_drawer_container_items: link === conversation.id }">
+                                        <q-avatar color="red" text-color="white"><span style="font-size:13px">{{
+                                            conversation.channel
+                                        }}</span></q-avatar>
+                                        <q-item-section>
+                                            <q-item-label style="font-size:13px;" lines="1"> {{ conversation.person }}
+                                            </q-item-label>
+                                            <q-item-label class="conversation__summary" caption>
+                                                <q-icon name="check" v-if="conversation.sent" />
+                                                <q-icon name="not_interested" v-if="conversation.deleted" /> {{
+                                                    conversation.caption
+                                                }} </q-item-label>
+                                        </q-item-section>
+                                        <q-item-section side>
+                                            <q-item-label caption> {{ conversation.time }} </q-item-label>
+                                            <q-icon name="keyboard_arrow_down" />
+                                        </q-item-section>
+                                    </q-chip>
+                                </q-item>
+                            </span>
+                            <span v-if="(paidChannels.length > 0)">
+                                <q-item-label header>Paid Channels</q-item-label>
+                                <q-intersection class="left_drawer_container_items"
+                                    v-for="(channel, index) in paidChannels" :key="channel.id" clickable v-ripple
+                                    transition="flip-right">
+                                    <channelItems :index="index" :channel="channel" :link="link" :skeleton="skeleton"
+                                        type="paid" />
+                                </q-intersection>
+                            </span>
                         </q-list>
                     </q-scroll-area>
                 </q-drawer>
@@ -134,10 +139,10 @@ export default {
             leftDrawerOpen,
             search: '',
             message: '',
-            currentConversationIndex: channelChat.currentConversationIndex,
-            currentConversationType: channelChat.currentConversationType,
+            currentChannelIndex: channelChat.currentChannelIndex,
+            currentChannelType: channelChat.currentChannelType,
             socket: null,
-            channels: false,
+            channels_received: false,
             freeChannels: [],
             paidChannels: [],
             link: channelChat.link,
@@ -148,11 +153,11 @@ export default {
         channelItems
     },
     computed: {
-        currentConversation() {
-            if (this.currentConversationType == 'free') {
-                return this.freeChannels[this.currentConversationIndex]
+        currentChannel() {
+            if (this.currentChannelType == 'free') {
+                return this.freeChannels[this.currentChannelIndex]
             } else {
-                return this.paidChannels[this.currentConversationIndex]
+                return this.paidChannels[this.currentChannelIndex]
             }
         },
         style() {
@@ -176,13 +181,44 @@ export default {
         this.$watch('channelChat.link', (val) => {
             _this.link = val
         })
-        this.$watch('channelChat.currentConversationIndex', (val) => {
-            _this.currentConversationIndex = val
+        this.$watch('channelChat.currentChannelIndex', (val) => {
+            _this.currentChannelIndex = val
         })
-        this.$watch('channelChat.currentConversationType', (val) => {
-            _this.currentConversationType = val
+        this.$watch('channelChat.currentChannelType', (val) => {
+            _this.currentChannelType = val
         })
+    },
+    watch: {
+        'channelChat.channels': {
+            handler(channel, before) {
+                let _this = this
+                channel.map(chan => {
+                    if (chan.subscribers.length > 0) {
+                        chan.subscribers.map(sub => {
+                            if (sub.user && sub.user == _this.auth.user.id) {
+                                if (sub.channel_type == 'Paid') {
+                                    _this.addPaidChannel(chan, true)
+                                } else {
+                                    _this.addFreeChannel(chan)
+                                }
+                            } else {
+                                _this.addPaidChannel(chan, false)
+                            }
+                        })
+                    } else {
+                        _this.addPaidChannel(chan, false)
+                    }
+                })
 
+                if ((_this.freeChannels.length > 0) && (_this.paidChannels.length > 0)) {
+                    _this.channelChat.setState('currentChannelType', 'free')
+                } else {
+                    _this.channelChat.setState('currentChannelType', 'paid')
+                }
+                _this.channels_received = channel.length > 0 ? true : false;
+            },
+            deep: true
+        }
     },
     methods: {
         getChatData() {
@@ -193,23 +229,14 @@ export default {
                 GetChannels(token).then(res => {
                     let data = res.data.channels
                     _this.link = 20
-                    _this.channels = data.length > 0 ? true : false;
-                    _this.freeChannels.push({
-                        id: 20,
-                        channel: "AUDUSD",
-                        person: 'Allan Gaunt',
-                        avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
-                        caption: 'I\'m working on Quasar!',
-                        time: '17:00',
-                        sent: true
-                    })
                     data.map(val => {
                         // console.log(val)
                         let channel_data = val;
                         let channel_id = channel_data.id;
-                        _this.paidChannels.push({
+                        _this.channelChat.channels.push({
                             id: channel_id,
                             channel: channel_data.channel_name,
+                            subscribers: channel_data.subscribers,
                             person: 'Allan Gaunt',
                             avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
                             caption: 'I\'m working on Quasar!',
@@ -228,6 +255,35 @@ export default {
                 this.showSimulatedReturnData = true
             })
         },
+        addPaidChannel(chan, unlocked) {
+            let channel_data = chan;
+            let channel_id = channel_data.id;
+            this.paidChannels.push({
+                id: channel_id,
+                channel: channel_data.channel_name,
+                subscribers: channel_data.subscribers,
+                unlocked: unlocked,
+                person: 'Allan Gaunt',
+                avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
+                caption: 'I\'m working on Quasar!',
+                time: '17:00',
+                sent: true
+            })
+        },
+        addFreeChannel(chan) {
+            let channel_data = chan;
+            let channel_id = channel_data.id;
+            this.freeChannels.push({
+                id: channel_id,
+                channel: channel_data.channel_name,
+                subscribers: channel_data.subscribers,
+                person: 'Allan Gaunt',
+                avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
+                caption: 'I\'m working on Quasar!',
+                time: '17:00',
+                sent: true
+            })
+        }
     },
     mounted() {
     }
