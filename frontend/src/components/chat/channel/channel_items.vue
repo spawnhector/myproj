@@ -1,6 +1,7 @@
 <template>
     <q-item>
-        <div v-if="lock" class="channel_disabled_wrapper" @mouseover="showSubscribe()" @mouseleave="hideSubscribe()">
+        <div v-if="!channel.unlocked" class="channel_disabled_wrapper" @mouseover="showSubscribe()"
+            @mouseleave="hideSubscribe()">
             <div class="channel_disabled_content">
                 <q-item-section v-if="show_subscribe" class="subscribe" side>
                     <q-btn flat rounded @click="unlockChannel" label="Unlock" />
@@ -27,22 +28,24 @@
                 </q-item-section>
             </q-chip>
         </div>
-        <q-chip v-if="!lock" size="30px" :class="{ active_left_drawer_container_items: link === channel.id }"
-            @click="setCurrentChannel">
-            <q-skeleton v-if="skeleton" type="QAvatar" class="chat_list_skeleton_avatar" />
-            <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{
-                channel.channel
-            }}</span></q-avatar>
-            <q-item-section>
-                <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_top" />
-                <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }} </q-item-label>
-                <q-item-label class="channel__summary" caption>
-                    <q-icon name="check" v-if="channel.sent" />
-                    <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_bottom" />
-                    <q-icon name="not_interested" v-if="channel.deleted && !skeleton" /> {{ channel.caption }}
-                </q-item-label>
-            </q-item-section>
-        </q-chip>
+        <span class="container_items" v-if="channel.unlocked" @click="setCurrentChannel">
+            <q-chip size="30px" :class="{ active_left_drawer_container_items: link === channel.id }">
+                <q-skeleton v-if="skeleton" type="QAvatar" class="chat_list_skeleton_avatar" />
+                <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{
+                    channel.channel
+                }}</span></q-avatar>
+                <q-item-section>
+                    <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_top" />
+                    <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }}
+                    </q-item-label>
+                    <q-item-label class="channel__summary" caption>
+                        <q-icon name="check" v-if="channel.sent" />
+                        <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_bottom" />
+                        <q-icon name="not_interested" v-if="channel.deleted && !skeleton" /> {{ channel.caption }}
+                    </q-item-label>
+                </q-item-section>
+            </q-chip>
+        </span>
     </q-item>
 </template>
 
@@ -80,7 +83,7 @@ export default {
             this.show_subscribe = false
         },
         setCurrentChannel() {
-            this.channelChat.setState('link', this.link)
+            this.channelChat.setState('link', this.channel.id)
             this.channelChat.setState('currentChannelType', this.type)
             this.channelChat.setState('currentChannelIndex', this.index)
         },
@@ -145,8 +148,8 @@ export default {
         //         console.error(`WebSocket error: ${error}`);
         //     };
         // },
-    }, mounted() {
-        console.log(this.channel)
+    },
+    mounted() {
     }
 }
 </script>
@@ -169,14 +172,6 @@ export default {
             right: 0
             bottom: 0
             position: absolute
-    .active_left_drawer_container_items
-        background-color: #1A1A32
-        color: #d7d7d7
-        .q-chip__content
-            .q-avatar
-                border: 1px solid #fff
-        .q-item__label--caption
-            color: #d7d7d7 !important
     .chat_list_skeleton_avatar
         width: 60px
         height: 60px
@@ -187,5 +182,14 @@ export default {
         height: 16px
     .channel__summary
         margin-top: 4px
-
+.container_items
+    width: -webkit-fill-available
+    .active_left_drawer_container_items
+        background-color: #1A1A32
+        color: #d7d7d7
+        .q-chip__content
+            .q-avatar
+                border: 1px solid #fff
+        .q-item__label--caption
+            color: #d7d7d7 !important
 </style>

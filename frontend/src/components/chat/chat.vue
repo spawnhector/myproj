@@ -179,6 +179,7 @@ export default {
             _this.leftDrawerOpen = val
         })
         this.$watch('channelChat.link', (val) => {
+            console.log(_this.link)
             _this.link = val
         })
         this.$watch('channelChat.currentChannelIndex', (val) => {
@@ -228,7 +229,7 @@ export default {
             this.auth.getToken().then(token => {
                 GetChannels(token).then(res => {
                     let data = res.data.channels
-                    _this.link = 20
+                    // _this.link = 20
                     data.map(val => {
                         // console.log(val)
                         let channel_data = val;
@@ -260,7 +261,7 @@ export default {
             let channel_id = channel_data.id;
             this.paidChannels.push({
                 id: channel_id,
-                channel: channel_data.channel_name,
+                channel: channel_data.channel,
                 subscribers: channel_data.subscribers,
                 unlocked: unlocked,
                 person: 'Allan Gaunt',
@@ -275,7 +276,7 @@ export default {
             let channel_id = channel_data.id;
             this.freeChannels.push({
                 id: channel_id,
-                channel: channel_data.channel_name,
+                channel: channel_data.channel,
                 subscribers: channel_data.subscribers,
                 person: 'Allan Gaunt',
                 avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
@@ -329,6 +330,7 @@ export default {
     padding: 1px 0px !important
 .left_drawer_container_items
     left: -2px
+    width: -webkit-fill-available
 .q-chip
     width: -webkit-fill-available
 
