@@ -119,11 +119,6 @@ class SignalsView(generics.CreateAPIView):
 class ChannelsView(generics.CreateAPIView):
     def get(self, request, format=None):
         app_channel = SChannel.objects.all()
-        # serialized_obj = serializers.serialize('python', app_channel)
-        # channel_data= []
-        # for dat in serialized_obj:
-        #     dat = list(dat.values())[1:]
-        #     channel_data.append(dat)
         channels = ChannelSerializer(app_channel,many=True)
         return Response({
             'status': 200,
@@ -139,10 +134,11 @@ class ChannelsSubscribeView(generics.CreateAPIView):
         app_channel = SChannel(id=channel)
         subscriber = Subscriber.objects.add_subscriber(channel,request.user.id,channel_type)
         app_channel.subscribers.add(subscriber.id)
+        all_app_channel = SChannel.objects.all()
+        app_channels = ChannelSerializer(all_app_channel,many=True)
         return Response({
             'status': 200,
             'data': {
-                'message': 'subscriber added'
-                # 'channels': channel_data,
+                'channels': app_channels.data,
             }
         })

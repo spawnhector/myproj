@@ -2,48 +2,8 @@
     <div class="position-relative" :style="style">
         <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
             <q-layout v-if="(channels_received) && (freeChannels.length > 0 || paidChannels.length > 0)"
-                v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3" container>
-                <q-header elevated>
-                    <q-toolbar class="bg-grey-3 text-black">
-                        <q-btn round flat>
-                            <q-avatar>
-                                <img :src="currentChannel.avatar">
-                            </q-avatar>
-                        </q-btn>
-                        <span class="q-subtitle-1 q-pl-md"
-                            v-text="`${auth.isAuthenticated ? '@' + auth.user.username + ' - ' + currentChannel.channel : 'Guest'}`">
-                        </span>
-                        <q-space />
-                        <q-btn round flat icon="search" />
-                        <q-btn round flat>
-                            <q-icon name="attachment" class="rotate-135" />
-                        </q-btn>
-                        <q-btn round flat icon="more_vert">
-                            <q-menu auto-close :offset="[110, 0]">
-                                <q-list style="min-width: 150px">
-                                    <q-item clickable>
-                                        <q-item-section>Contact data</q-item-section>
-                                    </q-item>
-                                    <q-item clickable>
-                                        <q-item-section>Block</q-item-section>
-                                    </q-item>
-                                    <q-item clickable>
-                                        <q-item-section>Select messages</q-item-section>
-                                    </q-item>
-                                    <q-item clickable>
-                                        <q-item-section>Silence</q-item-section>
-                                    </q-item>
-                                    <q-item clickable>
-                                        <q-item-section>Clear messages</q-item-section>
-                                    </q-item>
-                                    <q-item clickable>
-                                        <q-item-section>Erase messages</q-item-section>
-                                    </q-item>
-                                </q-list>
-                            </q-menu>
-                        </q-btn>
-                    </q-toolbar>
-                </q-header>
+                v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3 chat-container" container>
+                <channelChatHeader :currentChannel="currentChannel" />
                 <q-drawer v-model="leftDrawerOpen" bordered :breakpoint="690">
                     <q-toolbar class="bg-grey-2">
                         <q-input rounded outlined dense class="WAL__field full-width" bg-color="white" v-model="search"
@@ -92,8 +52,8 @@
                         </q-list>
                     </q-scroll-area>
                 </q-drawer>
-                <q-page-container style="padding-top: 0px !important;" class="bg-grey-2">
-                    <!-- <router-view /> -->
+                <q-page-container style="padding-top: 0px !important;position: relative;top: -7px;" class="bg-grey-2">
+                    <channelBody />
                 </q-page-container>
                 <q-footer>
                     <q-toolbar class="bg-grey-3 text-black row">
@@ -119,7 +79,9 @@ import {
   useMainAppStore,
 } from '../../lib/store.js';
 import { GetChannels } from '../../utils/apiRequest';
+import channelBody from './channel/channel_body.vue';
 import channelItems from './channel/channel_items.vue';
+import channelChatHeader from './channel/channelChatHeader.vue';
 
 export default {
     name: 'ChatLayout',
@@ -150,20 +112,27 @@ export default {
         }
     },
     components: {
-        channelItems
+        channelItems,
+        channelBody,
+        channelChatHeader
     },
     computed: {
         currentChannel() {
-            if (this.currentChannelType == 'free') {
-                return this.freeChannels[this.currentChannelIndex]
+            if (this.channelChat.hasSubscribedChannels) {
+                if (this.currentChannelType == 'free') {
+                    return this.freeChannels[this.currentChannelIndex]
+                } else {
+                    return this.paidChannels[this.currentChannelIndex]
+                }
             } else {
-                return this.paidChannels[this.currentChannelIndex]
+                return false;
             }
         },
         style() {
             let _this = this
             return {
-                height: (_this.$q.screen.height - 62) + 'px'
+                height: (_this.$q.screen.height - 57) + 'px',
+                padding: '8px'
             }
         },
         isAuth() {
@@ -179,7 +148,6 @@ export default {
             _this.leftDrawerOpen = val
         })
         this.$watch('channelChat.link', (val) => {
-            console.log(_this.link)
             _this.link = val
         })
         this.$watch('channelChat.currentChannelIndex', (val) => {
@@ -193,23 +161,33 @@ export default {
         'channelChat.channels': {
             handler(channel, before) {
                 let _this = this
-                channel.map(chan => {
+                let freeChan = []
+                let paidChan = []
+                channel.map((chan, chanIndex) => {
                     if (chan.subscribers.length > 0) {
-                        chan.subscribers.map(sub => {
+                        chan.subscribers.map((sub, subindex) => {
                             if (sub.user && sub.user == _this.auth.user.id) {
+                                _this.channelChat.setState('hasSubscribedChannels', true)
+                                if (!_this.channelChat.initialChannelIndex) {
+                                    _this.channelChat.setState('link', chan.id)
+                                    _this.channelChat.setState('currentChannelIndex', chanIndex);
+                                    _this.channelChat.setState('initialChannelIndex', true);
+                                }
                                 if (sub.channel_type == 'Paid') {
-                                    _this.addPaidChannel(chan, true)
+                                    paidChan.push(_this.addPaidChannel(chan, true))
                                 } else {
-                                    _this.addFreeChannel(chan)
+                                    freeChan.push(_this.addFreeChannel(chan))
                                 }
                             } else {
-                                _this.addPaidChannel(chan, false)
+                                paidChan.push(_this.addPaidChannel(chan, false))
                             }
                         })
                     } else {
-                        _this.addPaidChannel(chan, false)
+                        paidChan.push(_this.addPaidChannel(chan, false))
                     }
                 })
+                this.freeChannels = freeChan
+                this.paidChannels = paidChan
 
                 if ((_this.freeChannels.length > 0) && (_this.paidChannels.length > 0)) {
                     _this.channelChat.setState('currentChannelType', 'free')
@@ -229,12 +207,13 @@ export default {
             this.auth.getToken().then(token => {
                 GetChannels(token).then(res => {
                     let data = res.data.channels
+                    let arrBuild = []
                     // _this.link = 20
                     data.map(val => {
                         // console.log(val)
                         let channel_data = val;
                         let channel_id = channel_data.id;
-                        _this.channelChat.channels.push({
+                        arrBuild.push({
                             id: channel_id,
                             channel: channel_data.channel_name,
                             subscribers: channel_data.subscribers,
@@ -245,6 +224,7 @@ export default {
                             sent: true
                         })
                     })
+                    _this.channelChat.setState('channels', arrBuild)
                     _this.skeleton = false;
                     this.visible = false
                     this.showSimulatedReturnData = true
@@ -259,7 +239,7 @@ export default {
         addPaidChannel(chan, unlocked) {
             let channel_data = chan;
             let channel_id = channel_data.id;
-            this.paidChannels.push({
+            return {
                 id: channel_id,
                 channel: channel_data.channel,
                 subscribers: channel_data.subscribers,
@@ -269,12 +249,12 @@ export default {
                 caption: 'I\'m working on Quasar!',
                 time: '17:00',
                 sent: true
-            })
+            }
         },
         addFreeChannel(chan) {
             let channel_data = chan;
             let channel_id = channel_data.id;
-            this.freeChannels.push({
+            return {
                 id: channel_id,
                 channel: channel_data.channel,
                 subscribers: channel_data.subscribers,
@@ -283,7 +263,7 @@ export default {
                 caption: 'I\'m working on Quasar!',
                 time: '17:00',
                 sent: true
-            })
+            }
         }
     },
     mounted() {
@@ -329,9 +309,10 @@ export default {
 .q-item
     padding: 1px 0px !important
 .left_drawer_container_items
-    left: -2px
+    left: -1px
     width: -webkit-fill-available
 .q-chip
     width: -webkit-fill-available
-
+.chat-container
+    border-radius: 15px
 </style>

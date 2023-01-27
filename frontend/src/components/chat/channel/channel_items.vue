@@ -4,7 +4,9 @@
             @mouseleave="hideSubscribe()">
             <div class="channel_disabled_content">
                 <q-item-section v-if="show_subscribe" class="subscribe" side>
-                    <q-btn flat rounded @click="unlockChannel" label="Unlock" />
+                    <q-chip size="sm" @click="unlockChannel" color="orange" text-color="white" icon="lock_open"
+                        clickable> Unlock </q-chip>
+                    <!-- <q-btn flat rounded @click="unlockChannel" label="Unlock" /> -->
                 </q-item-section>
                 <div class="lock">
                     <q-icon v-if="!unlocking" name="lock" />
@@ -96,7 +98,25 @@ export default {
                 data.append('channel', _this.channel.id)
                 data.append('channel_type', 'Paid')
                 SubscribeChannels(token, data).then(res => {
-                    console.log(res)
+                    let dataC = res.data.channels
+                    let arrBuild = []
+                    // _this.link = 20
+                    dataC.map(val => {
+                        // console.log(val)
+                        let channel_data = val;
+                        let channel_id = channel_data.id;
+                        arrBuild.push({
+                            id: channel_id,
+                            channel: channel_data.channel_name,
+                            subscribers: channel_data.subscribers,
+                            person: 'Allan Gaunt',
+                            avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
+                            caption: 'I\'m working on Quasar!',
+                            time: '17:00',
+                            sent: true
+                        })
+                    })
+                    _this.channelChat.setState('channels', arrBuild)
                 }, err => {
                     console.log(err)
                 })

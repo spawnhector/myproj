@@ -199,5 +199,6 @@ export default {
             max-height: 200px
             overflow-y: scroll
             background-color: #1A1A2A
-
+        .q-item
+            background-color: #24292e
 </style>
