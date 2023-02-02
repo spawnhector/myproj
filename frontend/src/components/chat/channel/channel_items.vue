@@ -4,9 +4,11 @@
             @mouseleave="hideSubscribe()">
             <div class="channel_disabled_content">
                 <q-item-section v-if="show_subscribe" class="subscribe" side>
-                    <q-chip size="sm" @click="unlockChannel" color="orange" text-color="white" icon="lock_open"
-                        clickable> Unlock </q-chip>
-                    <!-- <q-btn flat rounded @click="unlockChannel" label="Unlock" /> -->
+                    <q-chip v-if="!channelChat.tutorial.dsFreeChannel" size="sm" @click="unlockChannel('Paid')"
+                        color="orange" text-color="white" icon="lock_open" clickable> Unlock For ${{ '10' }} /
+                        month</q-chip>
+                    <q-chip v-if="channelChat.tutorial.dsFreeChannel" size="sm" @click="unlockChannel('Free')"
+                        color="orange" text-color="white" icon="lock_open" clickable> Unlock For Free</q-chip>
                 </q-item-section>
                 <div class="lock">
                     <q-icon v-if="!unlocking" name="lock" />
@@ -89,14 +91,14 @@ export default {
             this.channelChat.setState('currentChannelType', this.type)
             this.channelChat.setState('currentChannelIndex', this.index)
         },
-        unlockChannel() {
+        unlockChannel(channel_type) {
             let _this = this
             this.unlocking = true
             this.mainApp.setApp('mainLoader', true)
             this.auth.getToken().then(token => {
                 let data = new FormData()
                 data.append('channel', _this.channel.id)
-                data.append('channel_type', 'Paid')
+                data.append('channel_type', channel_type)
                 SubscribeChannels(token, data).then(res => {
                     let dataC = res.data.channels
                     let arrBuild = []

@@ -1,62 +1,43 @@
 <template>
-    <div class="position-relative" :style="style">
+    <div class="position-relative " :style="style.chatMain">
         <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
             <q-layout v-if="(channels_received) && (freeChannels.length > 0 || paidChannels.length > 0)"
                 v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3 chat-container" container>
                 <channelChatHeader :currentChannel="currentChannel" />
-                <q-drawer v-model="leftDrawerOpen" bordered :breakpoint="690">
-                    <q-toolbar class="bg-grey-2">
-                        <q-input rounded outlined dense class="WAL__field full-width" bg-color="white" v-model="search"
-                            placeholder="Search or start a new conversation">
-                            <template v-slot:prepend>
-                                <q-icon name="search" />
-                            </template>
-                        </q-input>
-                    </q-toolbar>
-                    <q-scroll-area style="height: calc(100% - 100px)">
-                        <q-list style="width: 300px">
-                            <span v-if="(freeChannels.length > 0)">
-                                <q-item-label header>Free Channel</q-item-label>
-                                <q-item class="left_drawer_container_items" v-for="(conversation) in freeChannels"
-                                    :key="conversation.id" clickable v-ripple>
-                                    <q-chip size="30px"
-                                        :class="{ active_left_drawer_container_items: link === conversation.id }">
-                                        <q-avatar color="red" text-color="white"><span style="font-size:13px">{{
-                                            conversation.channel
-                                        }}</span></q-avatar>
-                                        <q-item-section>
-                                            <q-item-label style="font-size:13px;" lines="1"> {{ conversation.person }}
-                                            </q-item-label>
-                                            <q-item-label class="conversation__summary" caption>
-                                                <q-icon name="check" v-if="conversation.sent" />
-                                                <q-icon name="not_interested" v-if="conversation.deleted" /> {{
-                                                    conversation.caption
-                                                }} </q-item-label>
-                                        </q-item-section>
-                                        <q-item-section side>
-                                            <q-item-label caption> {{ conversation.time }} </q-item-label>
-                                            <q-icon name="keyboard_arrow_down" />
-                                        </q-item-section>
-                                    </q-chip>
-                                </q-item>
-                            </span>
-                            <span v-if="(paidChannels.length > 0)">
-                                <q-item-label header>Paid Channels</q-item-label>
-                                <q-intersection class="left_drawer_container_items"
-                                    v-for="(channel, index) in paidChannels" :key="channel.id" clickable v-ripple
-                                    transition="flip-right">
-                                    <channelItems :index="index" :channel="channel" :link="link" :skeleton="skeleton"
-                                        type="paid" />
-                                </q-intersection>
-                            </span>
-                        </q-list>
-                    </q-scroll-area>
-                </q-drawer>
-                <q-page-container style="padding-top: 0px !important;position: relative;top: -7px;" class="bg-grey-2">
-                    <channelBody />
+                <div :style="style.chatDrawer">
+                    <q-drawer style="background: rgba(255, 255, 255, 0.07) !important" v-model="leftDrawerOpen" bordered
+                        :breakpoint="690">
+                        <q-toolbar class="">
+                        </q-toolbar>
+                        <q-scroll-area style="height: calc(100% - 100px)">
+                            <q-list style="width: 300px" class="channel-list" :class="classes.dsFreeChannel">
+                                <span v-if="(freeChannels.length > 0)">
+                                    <q-item-label header>Free Channel</q-item-label>
+                                    <q-item class="left_drawer_container_items" v-for="(channel, index) in freeChannels"
+                                        :key="channel.id" clickable v-ripple>
+                                        <channelItems :index="index" :channel="channel" :link="link"
+                                            :skeleton="skeleton" type="Free" />
+                                    </q-item>
+                                </span>
+                                <span v-if="(paidChannels.length > 0)">
+                                    <q-item-label header>Paid Channels</q-item-label>
+                                    <q-intersection class="left_drawer_container_items"
+                                        v-for="(channel, index) in paidChannels" :key="channel.id" clickable v-ripple
+                                        transition="flip-right">
+                                        <channelItems :index="index" :channel="channel" :link="link"
+                                            :skeleton="skeleton" type="Paid" />
+                                    </q-intersection>
+                                </span>
+                            </q-list>
+                        </q-scroll-area>
+                    </q-drawer>
+                </div>
+                <Blur blurtype="secondary" />
+                <q-page-container :style="style.pageContainer">
+                    <channelBody :currentChannel="currentChannel" />
                 </q-page-container>
-                <q-footer>
-                    <q-toolbar class="bg-grey-3 text-black row">
+                <q-footer style="height: 46px;">
+                    <q-toolbar class="row">
                         <q-btn round flat icon="insert_emoticon" class="q-mr-sm" />
                         <q-input rounded outlined dense class="WAL__field col-grow q-mr-sm" bg-color="white"
                             v-model="message" placeholder="Type a message" />
@@ -79,6 +60,7 @@ import {
   useMainAppStore,
 } from '../../lib/store.js';
 import { GetChannels } from '../../utils/apiRequest';
+import Blur from '../layout/blur/blur.vue';
 import channelBody from './channel/channel_body.vue';
 import channelItems from './channel/channel_items.vue';
 import channelChatHeader from './channel/channelChatHeader.vue';
@@ -114,12 +96,13 @@ export default {
     components: {
         channelItems,
         channelBody,
-        channelChatHeader
+        channelChatHeader,
+        Blur
     },
     computed: {
         currentChannel() {
             if (this.channelChat.hasSubscribedChannels) {
-                if (this.currentChannelType == 'free') {
+                if (this.currentChannelType == 'Free') {
                     return this.freeChannels[this.currentChannelIndex]
                 } else {
                     return this.paidChannels[this.currentChannelIndex]
@@ -131,8 +114,33 @@ export default {
         style() {
             let _this = this
             return {
-                height: (_this.$q.screen.height - 57) + 'px',
-                padding: '8px'
+                chatMain: {
+                    height: (_this.$q.screen.height - 57) + 'px',
+                    padding: '8px',
+                },
+                chatDrawer: {
+                    zIndex: _this.channelChat.tutorial.dsFreeChannel ? '100000' : 0,
+                    position: _this.channelChat.tutorial.dsFreeChannel ? 'absolute' : 'initial',
+                },
+                pageContainer: {
+                    paddingTop: '0px !important',
+                    position: 'relative',
+                    top: '-7px',
+                    paddingBottom: '0px !important',
+                    zIndex: _this.channelChat.tutorial.currentStepIndex == 2 ? '10000' : '0'
+                },
+                currencyList: {
+                    zIndex: _this.channelChat.tutorial.currentStepIndex == 2 ? '10000' : '0'
+                }
+            }
+        },
+        classes() {
+            let _this = this;
+            return {
+                dsFreeChannel: {
+                    'add-free-channel': _this.channelChat.tutorial.dsFreeChannel,
+                    'add-blur': !_this.channelChat.tutorial.dsFreeChannel
+                }
             }
         },
         isAuth() {
@@ -163,6 +171,7 @@ export default {
                 let _this = this
                 let freeChan = []
                 let paidChan = []
+                let hasFreeChannel = false;
                 channel.map((chan, chanIndex) => {
                     if (chan.subscribers.length > 0) {
                         chan.subscribers.map((sub, subindex) => {
@@ -176,7 +185,8 @@ export default {
                                 if (sub.channel_type == 'Paid') {
                                     paidChan.push(_this.addPaidChannel(chan, true))
                                 } else {
-                                    freeChan.push(_this.addFreeChannel(chan))
+                                    hasFreeChannel = true;
+                                    freeChan.push(_this.addFreeChannel(chan, true))
                                 }
                             } else {
                                 paidChan.push(_this.addPaidChannel(chan, false))
@@ -189,10 +199,15 @@ export default {
                 this.freeChannels = freeChan
                 this.paidChannels = paidChan
 
+                if (hasFreeChannel) _this.channelChat.setState('hasFreeChannel', true);
+                if (!hasFreeChannel) _this.channelChat.setState('tutorial', {
+                    ..._this.channelChat.tutorial,
+                    active: true
+                });
                 if ((_this.freeChannels.length > 0) && (_this.paidChannels.length > 0)) {
-                    _this.channelChat.setState('currentChannelType', 'free')
+                    _this.channelChat.setState('currentChannelType', 'Free')
                 } else {
-                    _this.channelChat.setState('currentChannelType', 'paid')
+                    _this.channelChat.setState('currentChannelType', 'Paid')
                 }
                 _this.channels_received = channel.length > 0 ? true : false;
             },
@@ -251,13 +266,14 @@ export default {
                 sent: true
             }
         },
-        addFreeChannel(chan) {
+        addFreeChannel(chan, unlocked) {
             let channel_data = chan;
             let channel_id = channel_data.id;
             return {
                 id: channel_id,
                 channel: channel_data.channel,
                 subscribers: channel_data.subscribers,
+                unlocked: unlocked,
                 person: 'Allan Gaunt',
                 avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
                 caption: 'I\'m working on Quasar!',
@@ -311,8 +327,26 @@ export default {
 .left_drawer_container_items
     left: -1px
     width: -webkit-fill-available
+    .q-item
+        width: -webkit-fill-available
 .q-chip
     width: -webkit-fill-available
 .chat-container
     border-radius: 15px
+    .q-drawer
+        background: #fff0
+    .q-field--dense
+        .q-field__control
+            height: 32px
+            color: white
+            background-color: rgba(255, 255, 255, 0.19) !important
+            .q-field__native
+                color: white !important
+
+    .q-footer
+        .row
+            bottom: 2px
+    .q-item__label--header
+        padding: 17px
+
 </style>

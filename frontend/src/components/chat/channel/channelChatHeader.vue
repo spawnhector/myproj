@@ -1,6 +1,6 @@
 <template>
     <q-header elevated>
-        <q-toolbar class="bg-grey-3 text-black ChannelChatHeader">
+        <q-toolbar class="ChannelChatHeader">
             <div class="q-subtitle-1 content" v-html="headerLeft"></div>
             <q-space />
             <q-btn round flat icon="more_vert">
@@ -46,31 +46,49 @@ export default {
     data() {
         const auth = useAuthStore()
         const channelChat = useChannelChat()
-        return { auth, channelChat, steps: null }
+        return { auth, channelChat, steps: null, skipStep: null }
     },
     computed: {
         headerLeft() {
+            let _this = this;
+            if (_this.channelChat.tutorial.currentStepIndex >= 2) {
+                _this.skipStep.classList.remove("show")
+                _this.skipStep.removeEventListener('click', _this.skipStepFunc);
+            }
+            const stepper = () => {
+                return _this.channelChat.tutorial.active ? `
+                        <div>
+                            <ul class="stepper">
+                                <li><span>Getting Started</span></li>
+                                <li><span>Verify Account</span></li>
+                                <li><span>Get Free Signal</span></li>
+                            </ul>
+                        </div>
+                    ` : ``;
+            }
+            const userAccess = () => {
+                return `<span>${'@' + _this.auth.user.username}${_this.currentChannel ? ` - ` + _this.currentChannel.channel : ``}</span>`;
+            }
+            const action = () => {
+                return _this.channelChat.tutorial.active ?
+                    `<span id="skipStep">Skip this step</span>` :
+                    `<span id="linkAccount">Link Account</span>`;
+            }
             return `
-                ${this.auth.isAuthenticated ?
+                ${_this.auth.isAuthenticated ?
                     `<div class="usersData">
-                        <div>${'@' + this.auth.user.username}</div>
-                        <div class="action" id="skipStep">Skip this step</div>
-                    </div>` +
-                    (this.currentChannel ? this.currentChannel.channel :
-                        `
-                        <ul class="stepper">
-                            <li><span>Getting Started</span></li>
-                            <li><span>About Us</span></li>
-                            <li><span>Cloud computing explored</span></li>
-                        </ul>
-                    `
-                    ) : 'Guest'}
+                        <div class="useraccess">${userAccess()}</div>
+                        <div class="action">${action()}</div>
+                    </div>
+                    ${stepper()}
+                    `  : 'Guest'}
             `
         }
     },
     methods: {
-        skipStep() {
+        skipStepFunc() {
             this.channelChat.setState('tutorial', {
+                ...this.channelChat.tutorial,
                 currentStepIndex: this.channelChat.tutorial.currentStepIndex + 1,
             })
             this.steps[this.channelChat.tutorial.currentStepIndex].classList.add("is-active");
@@ -79,13 +97,18 @@ export default {
     mounted() {
         let _this = this;
         this.$nextTick(() => {
-            var skipStep = document.getElementById('skipStep')
-            skipStep.addEventListener('click', _this.skipStep)
+            _this.skipStep = document.getElementById('skipStep');
             _this.steps = document.querySelectorAll(".stepper li");
-            var delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-            delay(1000).then(() => {
-                _this.steps[_this.channelChat.tutorial.currentStepIndex].classList.add("is-active");
-            });
+            if (typeof (_this.steps) != 'undefined' && _this.steps.length > 0) {
+                var delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+                delay(1000).then(() => {
+                    _this.steps[_this.channelChat.tutorial.currentStepIndex].classList.add("is-active");
+                });
+            }
+            if (typeof (_this.skipStep) != 'undefined' && _this.skipStep != null) {
+                _this.skipStep.classList.add("show")
+                _this.skipStep.addEventListener('click', _this.skipStepFunc)
+            }
         })
     }
 }
@@ -95,13 +118,10 @@ export default {
     list-style: none;
     display: flex;
     flex-wrap: nowrap;
-    padding: 0px 0px 0px 78px;
-    // top: -18px;
-    // // left: -125px;
-    // position: relative;
+    padding: 10px 0px 0px 0px;
 
     >li {
-        flex: 0 0 137px;
+        flex: 0 0 160px;
         position: relative;
         padding-bottom: 30px;
 
@@ -111,6 +131,7 @@ export default {
             left: 0;
             width: 100%;
             text-align: center;
+            font-size: 11px;
             opacity: 0;
             transition: 0.75s opacity ease-in;
         }
@@ -120,12 +141,12 @@ export default {
             position: absolute;
             left: 50%;
             top: -5px;
-            background: white;
+            background: #24292e;
             box-sizing: border-box;
             width: 1em;
             z-index: 1;
             height: 1em;
-            border: 2px solid #2109a7;
+            border: 2px solid white;
             border-radius: 50%;
             transform: translateX(-50%) scale(0);
             transition: 0.75s all ease-in;
@@ -155,25 +176,48 @@ export default {
 }
 
 .ChannelChatHeader {
+    color: #ffffff9c;
+
     .content {
-        position: relative;
+        position: absolute;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-content: center;
+        justify-content: center;
+        align-items: center;
 
         .usersData {
-            position: absolute;
-            top: 10px;
+            position: relative;
+            top: 0;
+
+            .useraccess {}
 
             .action {
                 font-size: 11px;
                 text-decoration: underline;
                 cursor: pointer;
-                color: #0000ff94;
+                color: white;
+
+                #skipStep {
+                    display: none;
+
+                    &.show {
+                        display: block;
+                    }
+                }
 
                 &:hover {
-                    color: blue;
+                    color: #757575;
                 }
             }
         }
     }
+}
+
+.q-layout__section--marginal {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #fff;
 }
 
 @keyframes stepper {

@@ -1,7 +1,7 @@
 <template>
     <div>
-        <q-carousel ref="tutorial" :height="height" v-model="step" transition-prev="jump-left"
-            transition-next="jump-left" animated padding class="bg-purple text-white">
+        <q-carousel ref="tutorial" v-model="step" transition-prev="jump-left" transition-next="jump-left" animated
+            padding class="text-white">
             <q-carousel-slide name="stepOne" class="text-center">
                 <q-scroll-area class="fit">
                     <StepOne />
@@ -10,6 +10,11 @@
             <q-carousel-slide name="stepTwo" class="text-center">
                 <q-scroll-area class="fit">
                     <StepTwo />
+                </q-scroll-area>
+            </q-carousel-slide>
+            <q-carousel-slide name="stepThree" class="text-center">
+                <q-scroll-area class="fit">
+                    <StepThree />
                 </q-scroll-area>
             </q-carousel-slide>
         </q-carousel>
@@ -26,17 +31,18 @@ import {
 } from '../../../../lib/store.js';
 import StepOne from './steps/step1.vue';
 import StepTwo from './steps/step2.vue';
+import StepThree from './steps/step3.vue';
 
 export default {
     name: 'Tutorial',
     components: {
-        StepOne, StepTwo
+        StepOne, StepTwo, StepThree
     },
     props: [],
     computed: {
         height() {
             let _this = this
-            return `${_this.$q.screen.height - 156}px`
+            return `${_this.$q.screen.height - 171}px`
         }
     },
     created() {
