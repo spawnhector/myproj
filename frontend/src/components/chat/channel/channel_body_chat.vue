@@ -1,9 +1,9 @@
 <template>
     <div>
-        <q-scroll-area :thumb-style="thumbStyle" :bar-style="barStyle" :style="style">
+        <q-scroll-area :thumb-style="thumbStyle" :bar-style="barStyle" :style="style" ref="channelChatBody">
             <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-                <div v-show="showChatData" class="channel-chat-body" id="channel-chat-body">
-                    <span v-for="(chats, mainKey) in conversations" :key="`${chats[0][0]}-conversation-start-${mainKey}`"
+                <div v-show="showChatData" class="channel-chat-body">
+                    <div v-for="(chats, mainKey) in conversations" :key="`${chats[0][0]}-conversation-start-${mainKey}`"
                         class="item">
                         <div class="conversation-start">
                             <span>
@@ -29,7 +29,7 @@
                                 </div>
                             </q-chip>
                         </div>
-                    </span>
+                    </div>
                 </div>
             </transition>
         </q-scroll-area>
@@ -47,7 +47,6 @@ export default {
     watch: {
         'currentChannel': {
             handler(channel, before) {
-                console.log('here sir', channel)
                 this.getChannelChatData(channel)
             },
             deep: true
@@ -148,16 +147,23 @@ export default {
                 },
                 sub: chat[1] == 'Buy' ? 'green' : 'red'
             }
+        },
+        scrollToLastElement() {
+            this.$nextTick(() => {
+                const container = this.$refs.channelChatBody.$el;
+                const subContainer = container.querySelector('.q-scrollarea__container');
+                const lastElement = subContainer.querySelector('.item:last-child');
+                if (lastElement) {
+                    subContainer.scrollTop = lastElement.offsetTop + lastElement.offsetHeight;
+                }
+            });
         }
+    },
+    updated() {
+        this.scrollToLastElement()
     },
     mounted() {
         this.getChannelChatData(this.currentChannel)
-        this.$nextTick(() => {
-            const container = document.getElementById('channel-chat-body');
-            const lastElement = container.querySelector('.item:last-child');
-            console.log(container)
-            // container.scrollTop = lastElement.offsetTop - container.offsetHeight + lastElement.offsetHeight;
-        })
     }
 }
 </script>
@@ -175,6 +181,7 @@ export default {
 
 .channel-chat-body {
     padding: 10px;
+    // overflow-y: auto;
 
     .text-container {
         width: 132px;
