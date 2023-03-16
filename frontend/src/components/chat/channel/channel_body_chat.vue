@@ -32,6 +32,12 @@
                     </div>
                 </div>
             </transition>
+            <q-page-sticky v-show="showScrollTo" position="bottom-right" :offset="fabPos">
+                <q-btn round dense color="primary" icon="arrow_downward" @click="scrollToLastElement" :disable="draggingFab"
+                    v-touch-pan.prevent.mouse="moveFab">
+                    <q-badge color="red" floating>4</q-badge>
+                </q-btn>
+            </q-page-sticky>
         </q-scroll-area>
         <q-inner-loading :showing="loading" label="Please wait..." label-class="text-teal" label-style="font-size: 1.1em" />
     </div>
@@ -79,15 +85,21 @@ export default {
     },
     data() {
         const $q = useQuasar();
+        let fabPos = [18, 18];
+        let draggingFab = false;
         return {
             $q,
+            fabPos,
+            draggingFab,
             loading: false,
             showChatData: false,
             socket: null,
             requests: 0,
             limit: 1000, // number of requests per minute
             interval: 60000, // interval in milliseconds
-            conversations: {}
+            conversations: {},
+            lastElementPosition: null,
+            showScrollTo: false
         }
     },
     methods: {
@@ -154,9 +166,29 @@ export default {
                 const subContainer = container.querySelector('.q-scrollarea__container');
                 const lastElement = subContainer.querySelector('.item:last-child');
                 if (lastElement) {
-                    subContainer.scrollTop = lastElement.offsetTop + lastElement.offsetHeight;
+                    let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
+                    subContainer.addEventListener('scroll', this.handleScroll)
+                    this.lastElementPosition = lastElePosition - subContainer.clientHeight
+                    subContainer.scrollTop = lastElePosition;
                 }
             });
+        },
+        handleScroll() {
+            const container = this.$refs.channelChatBody.$el;
+            const subContainer = container.querySelector('.q-scrollarea__container');
+            if (subContainer.scrollTop < this.lastElementPosition) {
+                this.showScrollTo = true;
+            } else {
+                this.showScrollTo = false;
+            }
+        },
+        moveFab(ev) {
+            this.draggingFab = ev.isFirst !== true && ev.isFinal !== true
+
+            this.fabPos = [
+                this.fabPos[0] - ev.delta.x,
+                this.fabPos[1] - ev.delta.y
+            ]
         }
     },
     updated() {
