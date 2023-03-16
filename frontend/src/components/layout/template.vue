@@ -42,12 +42,7 @@ export default {
 }
 </script>
 <style>
-.side-container {
-    background-color: rgba(255, 255, 255, 0.07);
-    padding: 10px;
-    border-radius: 15px;
-    box-shadow: 0 1px 8px rgb(0 0 0 / 20%), 0 3px 4px rgb(0 0 0 / 14%), 0 3px 3px -2px rgb(0 0 0 / 12%);
-}
+.side-container {}
 
 .side-container-wrapper {
     background-color: #24292e;

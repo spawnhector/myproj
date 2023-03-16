@@ -4,8 +4,8 @@
             <!-- <q-btn round dense flat :ripple="false" :icon="fabGithub" size="19px" color="white" class="q-mr-sm"
                 no-caps /> -->
             <q-select ref="search" dark dense standout use-input hide-selected class="GL__toolbar-select" color="black"
-                :stack-label="false" label="Search or jump to..." v-model="text" :options="filteredOptions"
-                @filter="filter" style="width: 300px">
+                :stack-label="false" label="Search or jump to..." v-model="text" :options="filteredOptions" @filter="filter"
+                style="width: 300px">
                 <template v-slot:append>
                     <img src="https://cdn.quasar.dev/img/layout-gallery/img-github-search-key-slash.svg">
                 </template>
@@ -27,8 +27,8 @@
                             <q-item-label v-html="scope.opt.label" />
                         </q-item-section>
                         <q-item-section side :class="{ 'default-type': !scope.opt.type }">
-                            <q-btn outline dense no-caps text-color="blue-grey-5" size="12px" class="bg-grey-1 q-px-sm">
-                                {{ scope.opt.type || 'Jump to' }} <q-icon name="subdirectory_arrow_left" size="14px" />
+                            <q-btn outline dense no-caps text-color="blue-grey-5" size="12px" class="bg-grey-1 q-px-sm"> {{
+                                scope.opt.type || 'Jump to' }} <q-icon name="subdirectory_arrow_left" size="14px" />
                             </q-btn>
                         </q-item-section>
                     </q-item>
@@ -55,8 +55,8 @@ import { ref } from 'vue';
 import { fabGithub } from '@quasar/extras/fontawesome-v6';
 
 import {
-  useAuthStore,
-  useMainAppStore,
+    useAuthStore,
+    useMainAppStore,
 } from '../../../lib/store.js';
 import authnav from './auth.vue';
 import guestnav from './guest.vue';
@@ -134,9 +134,6 @@ export default {
                         .map(op => ({ label: op }))
                 ]
             })
-        },
-        openAuthModal() {
-            this.authdialog = true
         }
     }
 }

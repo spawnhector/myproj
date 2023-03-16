@@ -101,6 +101,7 @@ export default {
                 data.append('channel_type', channel_type)
                 SubscribeChannels(token, data).then(res => {
                     let dataC = res.data.channels
+                    _this.channelChat.setState('channelClicked', _this.channel.id)
                     let arrBuild = []
                     // _this.link = 20
                     dataC.map(val => {

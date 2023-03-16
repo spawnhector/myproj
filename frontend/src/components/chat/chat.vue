@@ -3,7 +3,7 @@
         <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
             <q-layout v-if="(channels_received) && (freeChannels.length > 0 || paidChannels.length > 0)"
                 v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3 chat-container" container>
-                <channelChatHeader :currentChannel="currentChannel" />
+                <channelChatHeader :currentChannel="activeChannel" />
                 <div :style="style.chatDrawer">
                     <q-drawer style="background: rgba(255, 255, 255, 0.07) !important" v-model="leftDrawerOpen" bordered
                         :breakpoint="690">
@@ -15,8 +15,8 @@
                                     <q-item-label header>Free Channel</q-item-label>
                                     <q-item class="left_drawer_container_items" v-for="(channel, index) in freeChannels"
                                         :key="channel.id" clickable v-ripple>
-                                        <channelItems :index="index" :channel="channel" :link="link"
-                                            :skeleton="skeleton" type="Free" />
+                                        <channelItems :index="index" :channel="channel" :link="link" :skeleton="skeleton"
+                                            type="Free" />
                                     </q-item>
                                 </span>
                                 <span v-if="(paidChannels.length > 0)">
@@ -24,17 +24,17 @@
                                     <q-intersection class="left_drawer_container_items"
                                         v-for="(channel, index) in paidChannels" :key="channel.id" clickable v-ripple
                                         transition="flip-right">
-                                        <channelItems :index="index" :channel="channel" :link="link"
-                                            :skeleton="skeleton" type="Paid" />
+                                        <channelItems :index="index" :channel="channel" :link="link" :skeleton="skeleton"
+                                            type="Paid" />
                                     </q-intersection>
                                 </span>
                             </q-list>
                         </q-scroll-area>
                     </q-drawer>
                 </div>
-                <Blur blurtype="secondary" />
+                <!-- <Blur blurtype="secondary" /> -->
                 <q-page-container :style="style.pageContainer">
-                    <channelBody :currentChannel="currentChannel" />
+                    <channelBody :activeChannel="activeChannel" />
                 </q-page-container>
                 <q-footer style="height: 46px;">
                     <q-toolbar class="row">
@@ -46,8 +46,7 @@
                 </q-footer>
             </q-layout>
         </transition>
-        <q-inner-loading :showing="visible" label="Please wait..." label-class="text-teal"
-            label-style="font-size: 1.1em" />
+        <q-inner-loading :showing="visible" label="Please wait..." label-class="text-teal" label-style="font-size: 1.1em" />
     </div>
 </template>
 
@@ -55,9 +54,9 @@
 import { useQuasar } from 'quasar';
 
 import {
-  useAuthStore,
-  useChannelChat,
-  useMainAppStore,
+    useAuthStore,
+    useChannelChat,
+    useMainAppStore,
 } from '../../lib/store.js';
 import { GetChannels } from '../../utils/apiRequest';
 import Blur from '../layout/blur/blur.vue';
@@ -86,6 +85,7 @@ export default {
             currentChannelIndex: channelChat.currentChannelIndex,
             currentChannelType: channelChat.currentChannelType,
             socket: null,
+            // activeChannel: false,
             channels_received: false,
             freeChannels: [],
             paidChannels: [],
@@ -100,11 +100,13 @@ export default {
         Blur
     },
     computed: {
-        currentChannel() {
+        activeChannel() {
             if (this.channelChat.hasSubscribedChannels) {
                 if (this.currentChannelType == 'Free') {
+                    console.log(this.currentChannelType, this.currentChannelIndex)
                     return this.freeChannels[this.currentChannelIndex]
                 } else {
+                    console.log(this.currentChannelType, this.currentChannelIndex)
                     return this.paidChannels[this.currentChannelIndex]
                 }
             } else {
@@ -142,9 +144,6 @@ export default {
                     'add-blur': !_this.channelChat.tutorial.dsFreeChannel
                 }
             }
-        },
-        isAuth() {
-            this.auth.getToken()
         }
     },
     beforeMount() {
@@ -152,7 +151,7 @@ export default {
     created() {
         let _this = this;
         this.$watch('auth.isAuthenticated', (val) => {
-            this.getChatData()
+            _this.getChatData()
             _this.leftDrawerOpen = val
         })
         this.$watch('channelChat.link', (val) => {
@@ -164,6 +163,7 @@ export default {
         this.$watch('channelChat.currentChannelType', (val) => {
             _this.currentChannelType = val
         })
+
     },
     watch: {
         'channelChat.channels': {
@@ -175,17 +175,29 @@ export default {
                 channel.map((chan, chanIndex) => {
                     if (chan.subscribers.length > 0) {
                         chan.subscribers.map((sub, subindex) => {
+                            const setChannelIndex = () => {
+                                if (_this.channelChat.channelClicked) {
+                                    if (_this.channelChat.channelClicked == chan.id) {
+                                        _this.channelChat.setState('link', chan.id)
+                                        _this.channelChat.setState('currentChannelIndex', chanIndex);
+                                        _this.channelChat.setState('initialChannelIndex', true);
+                                    }
+                                } else {
+                                    if (sub.channel_type == 'Free') {
+                                        _this.channelChat.setState('link', chan.id)
+                                        _this.channelChat.setState('currentChannelIndex', 0);
+                                        _this.channelChat.setState('initialChannelIndex', true);
+                                    }
+                                }
+                            }
                             if (sub.user && sub.user == _this.auth.user.id) {
                                 _this.channelChat.setState('hasSubscribedChannels', true)
-                                if (!_this.channelChat.initialChannelIndex) {
-                                    _this.channelChat.setState('link', chan.id)
-                                    _this.channelChat.setState('currentChannelIndex', chanIndex);
-                                    _this.channelChat.setState('initialChannelIndex', true);
-                                }
                                 if (sub.channel_type == 'Paid') {
+                                    setChannelIndex()
                                     paidChan.push(_this.addPaidChannel(chan, true))
                                 } else {
                                     hasFreeChannel = true;
+                                    setChannelIndex()
                                     freeChan.push(_this.addFreeChannel(chan, true))
                                 }
                             } else {
@@ -198,17 +210,17 @@ export default {
                 })
                 this.freeChannels = freeChan
                 this.paidChannels = paidChan
-
                 if (hasFreeChannel) _this.channelChat.setState('hasFreeChannel', true);
                 if (!hasFreeChannel) _this.channelChat.setState('tutorial', {
                     ..._this.channelChat.tutorial,
                     active: true
                 });
-                if ((_this.freeChannels.length > 0) && (_this.paidChannels.length > 0)) {
+                if (!_this.channelChat.channelClicked && (_this.freeChannels.length > 0) && (_this.paidChannels.length > 0)) {
                     _this.channelChat.setState('currentChannelType', 'Free')
                 } else {
                     _this.channelChat.setState('currentChannelType', 'Paid')
                 }
+                // console.log(_this.channelChat)
                 _this.channels_received = channel.length > 0 ? true : false;
             },
             deep: true
@@ -219,36 +231,33 @@ export default {
             let _this = this;
             this.visible = true
             this.showSimulatedReturnData = false
-            this.auth.getToken().then(token => {
-                GetChannels(token).then(res => {
-                    let data = res.data.channels
-                    let arrBuild = []
-                    // _this.link = 20
-                    data.map(val => {
-                        // console.log(val)
-                        let channel_data = val;
-                        let channel_id = channel_data.id;
-                        arrBuild.push({
-                            id: channel_id,
-                            channel: channel_data.channel_name,
-                            subscribers: channel_data.subscribers,
-                            person: 'Allan Gaunt',
-                            avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
-                            caption: 'I\'m working on Quasar!',
-                            time: '17:00',
-                            sent: true
-                        })
+            GetChannels(this.auth.token).then(res => {
+                let data = res.data.channels
+                let arrBuild = []
+                // _this.link = 20
+                data.map(val => {
+                    // console.log(val)
+                    let channel_data = val;
+                    let channel_id = channel_data.id;
+                    arrBuild.push({
+                        id: channel_id,
+                        channel: channel_data.channel_name,
+                        subscribers: channel_data.subscribers,
+                        person: 'Allan Gaunt',
+                        avatar: 'https://cdn.quasar.dev/team/allan_gaunt.png',
+                        caption: 'I\'m working on Quasar!',
+                        time: '17:00',
+                        sent: true
                     })
-                    _this.channelChat.setState('channels', arrBuild)
-                    _this.skeleton = false;
-                    this.visible = false
-                    this.showSimulatedReturnData = true
-                }, err => {
-                    console.log(err)
                 })
+                _this.channelChat.setState('channels', arrBuild)
+                _this.skeleton = false;
+                this.visible = false
+                this.showSimulatedReturnData = true
             }, err => {
                 this.visible = false
                 this.showSimulatedReturnData = true
+                console.log(err)
             })
         },
         addPaidChannel(chan, unlocked) {

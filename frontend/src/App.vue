@@ -6,12 +6,21 @@
         <router-view />
       </q-page-container>
     </div>
-    <Blur blurtype="primary" />
+    <Snackbar />
+    <!-- <Blur blurtype="primary" /> -->
   </q-layout>
 </template>
 
 <script>
+import {
+  markRaw,
+  ref,
+} from 'vue';
+
 import Blur from './components/layout/blur/blur.vue';
+import ErrorSnackBar
+  from './components/layout/snackbar/contents/auth/error.vue';
+import Snackbar from './components/layout/snackbar/snackbar.vue';
 import AppLayout from './components/layout/template.vue';
 import {
   useAuthStore,
@@ -22,7 +31,7 @@ import {
 export default {
   name: 'LayoutDefault',
   components: {
-    AppLayout, Blur
+    AppLayout, Blur, Snackbar
   },
   computed: {
     style() {
@@ -48,19 +57,19 @@ export default {
     return {
       MainApp: useMainAppStore(),
       channelChat,
-      // AlertMessage: useAlertMessageStore(),
-      // AlertNotification: useAlertNotificationStore(),
       modalShow: false,
       main_loading: true,
       setting: false,
-      // fixedSetting: '',
       auth: useAuthStore()
     }
   },
   beforeMount() {
-    this.auth.getToken()
-    // this.checkAuth()
-    // console.log(this.auth.isAuthenticatedd)
+    this.auth.getToken().then(req => { }, err => {
+      this.MainApp.setApp('snackbar', {
+        active: true,
+        component: markRaw(ErrorSnackBar)
+      })
+    })
   },
   created() {
     let _this = this
@@ -70,10 +79,6 @@ export default {
     this.$watch('MainApp.refetch', () => {
       this.getSetting()
     })
-    this.$watch('auth.access_token', (newVal) => {
-      console.log(newVal)
-    })
-
   },
   methods: {
     // showModal() {
@@ -95,12 +100,6 @@ export default {
     //   };
     //   return setting;
     // },
-    checkAuth() {
-      // this.MainApp.is_mobile;
-      let _this = this
-      console.log('checking auth')
-      _this.auth.checkAuth()
-    }
   },
   mounted() {
   }

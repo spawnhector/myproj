@@ -34,6 +34,8 @@ def convertToObject(data):
     data = data.split(',')
     data_dict = {}
     for item in data:
+        if not item:
+            break
         key, value = item.split(':')
         data_dict[key] = float(value)
     return data_dict

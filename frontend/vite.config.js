@@ -11,6 +11,9 @@ export default defineConfig({
   server: {
     // <-- this object is added
     port: 80,
+    watch: {
+      usePolling: true,
+    },
   },
   plugins: [
     vue({

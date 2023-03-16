@@ -46,11 +46,22 @@ export default {
     data() {
         const auth = useAuthStore()
         const channelChat = useChannelChat()
-        return { auth, channelChat, steps: null, skipStep: null }
+        let stepSize = 140;
+        return {
+            auth, channelChat, steps: null, skipStep: null,
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight,
+            stepSize
+        }
     },
     computed: {
         headerLeft() {
             let _this = this;
+            let stepperListArr = ['Getting Started', 'Verify Account', 'Get Free Signal'];
+            let stepperList = ``;
+            stepperListArr.forEach(val => {
+                stepperList = stepperList + `<li style="flex: 0 0 ${_this.stepSize}px;"><span>${val}</span></li>`
+            })
             if (_this.channelChat.tutorial.currentStepIndex >= 2) {
                 _this.skipStep.classList.remove("show")
                 _this.skipStep.removeEventListener('click', _this.skipStepFunc);
@@ -59,9 +70,7 @@ export default {
                 return _this.channelChat.tutorial.active ? `
                         <div>
                             <ul class="stepper">
-                                <li><span>Getting Started</span></li>
-                                <li><span>Verify Account</span></li>
-                                <li><span>Get Free Signal</span></li>
+                                ${stepperList}
                             </ul>
                         </div>
                     ` : ``;
@@ -92,6 +101,16 @@ export default {
                 currentStepIndex: this.channelChat.tutorial.currentStepIndex + 1,
             })
             this.steps[this.channelChat.tutorial.currentStepIndex].classList.add("is-active");
+        },
+        handleResize() {
+            this.windowWidth = window.innerWidth
+            this.windowHeight = window.innerHeight
+            for (let index = 0; index < this.steps.length; index++) {
+                const element = this.steps[index];
+                element.style.flex = ` 0 0 ${130}px`
+            }
+            // this.steps[0].style.flex = ` 0 0 ${130}px`
+            // console.log(this.steps[0])
         }
     },
     mounted() {
@@ -100,6 +119,7 @@ export default {
             _this.skipStep = document.getElementById('skipStep');
             _this.steps = document.querySelectorAll(".stepper li");
             if (typeof (_this.steps) != 'undefined' && _this.steps.length > 0) {
+                window.addEventListener('resize', _this.handleResize)
                 var delay = ms => new Promise(resolve => setTimeout(resolve, ms));
                 delay(1000).then(() => {
                     _this.steps[_this.channelChat.tutorial.currentStepIndex].classList.add("is-active");
@@ -121,7 +141,6 @@ export default {
     padding: 10px 0px 0px 0px;
 
     >li {
-        flex: 0 0 160px;
         position: relative;
         padding-bottom: 30px;
 

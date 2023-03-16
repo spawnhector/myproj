@@ -3,30 +3,29 @@
         <div id="vue-list-animation-test" class="container mt-5">
             <div class="row justify-content-center">
                 <div class="col-12 left_drawer_container">
-                    <ul class="list-group">
-                        <div class="bg-dark-container text-white">
+                    <ul class="currency-card list-group">
+                        <li class="list" v-show="showSimulatedReturnData" v-for="(signals, pair) in items"
+                            v-bind:key="pair">
                             <q-list dark>
-                                <q-expansion-item v-show="showSimulatedReturnData" v-for="(signals, pair) in items"
-                                    v-bind:key="pair" expand-separator default-opened>
+                                <q-expansion-item expand-separator>
                                     <template v-slot:header>
                                         <ListHeader :pair="pair" :signals="signals" />
                                     </template>
                                     <q-card class="bg-grey-9">
                                         <q-card-section class="signal-card">
                                             <transition-group name="list-complete" tag="li">
-                                                <li v-for="signal in signals" v-bind:key="signal[2]"
-                                                    class="list-group-item list-complete-item">
-                                                    <signal-list :signal="signal[2]" :percent="signal[3]" />
-                                                </li>
-                                            </transition-group>
-                                        </q-card-section>
-                                    </q-card>
-                                </q-expansion-item>
-                                <q-inner-loading :showing="visible">
-                                    <q-spinner-gears size="50px" color="primary" />
-                                </q-inner-loading>
-                            </q-list>
-                        </div>
+                        <li v-for="signal in signals" v-bind:key="signal[2]" class="list-group-item list-complete-item">
+                            <signal-list :signal="signal[2]" :percent="signal[3]" />
+                        </li>
+                        </transition-group>
+                        </q-card-section>
+                        </q-card>
+                        </q-expansion-item>
+                        <q-inner-loading :showing="visible">
+                            <q-spinner-gears size="50px" color="primary" />
+                        </q-inner-loading>
+                        </q-list>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -107,16 +106,16 @@ export default {
             return result;
         },
         socketAction() {
-            if (this.requests >= this.limit) {
-                this.socket.close()
-                return;
-            }
-            if (Date.now() - this.lastCheck > this.interval) {
-                this.lastCheck = Date.now();
-                this.requests = 0;
-            }
+            // if (this.requests >= this.limit) {
+            //     this.socket.close()
+            //     return;
+            // }
+            // if (Date.now() - this.lastCheck > this.interval) {
+            //     this.lastCheck = Date.now();
+            //     this.requests = 0;
+            // }
             this.socket.send(`testing counter`);
-            this.requests++;
+            // this.requests++;
         },
         calculatePercentage(obj, arr) {
             for (const key in obj) {
@@ -173,10 +172,18 @@ export default {
 </script>
 <style lang="sass">
 .left_drawer_container
-    ul.list-group
+    ul.currency-card
         list-style-type: none
         margin: 0px
         padding: 0px
+        .list:first-child
+            .q-item
+                border-top-left-radius: 14px
+                border-top-right-radius: 14px
+        .list:last-child
+            .q-item
+                border-bottom-left-radius: 14px
+                border-bottom-right-radius: 14px
         .list-complete-item
             transition: all .6s
         .list-complete-enter,
@@ -200,5 +207,5 @@ export default {
             overflow-y: scroll
             background-color: #1A1A2A
         .q-item
-            background-color: #24292e
+            background-color: rgba(255, 255, 255, 0.07)
 </style>

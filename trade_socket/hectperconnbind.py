@@ -131,15 +131,17 @@ def getSignals():
         }
 
 async def socketAction(websocket, path):
-    rate_limiter = RateLimiter(10, 1) # 10 messages per second
+    # rate_limiter = RateLimiter(10, 1) # 10 messages per second
     async for message in websocket:
+        if not message:
+            break
         with open(currencyDataFile, "r") as file:
             contents = file.read()
             data = json.dumps({
                 'pairs': getSignals(),
                 'currencyData': convertToObject(contents)
             })
-            await rate_limiter.acquire()
+            # await rate_limiter.acquire()
             await websocket.send(data)
 
 def create_web_socket(port):

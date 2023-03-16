@@ -25,8 +25,8 @@
 
 <script>
 import {
-  useAuthStore,
-  useMainAppStore,
+    useAuthStore,
+    useMainAppStore,
 } from '../../../lib/store.js';
 import { UserLogin } from '../../../utils/apiRequest';
 import formInput from '../../input/input.vue';
@@ -103,6 +103,10 @@ export default {
                 formData.append("username", this.username);
                 formData.append("password", this.password);
                 UserLogin(formData).then(res => {
+                    _this.mainApp.setApp('snackbar', {
+                        active: false,
+                        component: null
+                    })
                     _this.auth.setToken(res.token)
                     _this.auth.getToken().then(res => {
                         _this.auth.setAuth('authLoader', false);
@@ -118,6 +122,4 @@ export default {
     }
 }
 </script>
-<style lang="scss">
-
-</style>
+<style lang="scss"></style>

@@ -28,7 +28,7 @@
         <div class="main">
             <div class="main__text-wrapper">
                 <Tutorial v-if="channelChat.tutorial.active" />
-                <ChannelBodyChat :currentChannel="currentChannel" v-if="!channelChat.tutorial.active" />
+                <ChannelBodyChat :currentChannel="activeChannel" v-if="!channelChat.tutorial.active" />
             </div>
         </div>
     </div>
@@ -50,19 +50,21 @@ export default {
     components: {
         Tutorial, ChannelBodyChat
     },
-    props: ['currentChannel'],
+    props: ['activeChannel'],
     computed: {
         style() {
             let _this = this
             return `height: ${_this.$q.screen.height - 171}px;background-color: rgb(255 255 255 / 19%);    overflow: hidden !important;`
         }
     },
+    created() {
+    },
     data() {
         const $q = useQuasar();
         const channelChat = useChannelChat();
         return { $q, channelChat }
-    }
-    , mounted() {
+    },
+    mounted() {
     }
 }
 </script>

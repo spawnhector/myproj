@@ -6,8 +6,8 @@
                     <h5>Create a free account</h5>
                     <q-carousel v-model="slide" animated ref="registration" @transition="updateRegistrationComponent">
                         <q-carousel-slide name="register">
-                            <formInput type="text" placeholder="Username" :model="username" icon="badge"
-                                field="username" :validate="validateUsername" required="true" :activeform="activeForm"
+                            <formInput type="text" placeholder="Username" :model="username" icon="badge" field="username"
+                                :validate="validateUsername" required="true" :activeform="activeForm"
                                 :requesterror="requestError" @value-added="updateUsername" :form="formType" />
                             <formInput type="text" placeholder="Full Name" :model="full_name" icon="person"
                                 field="full_name" :validate="validateFullName" required="true" :activeform="activeForm"
@@ -32,8 +32,8 @@
                                 <div class="submit-sub-cont">
                                     <button type="button" class="submit" @click="backToRegistration">Back</button>
                                     <appSpacer width="30px" />
-                                    <button :disabled="!canRegister" type="button" class="submit"
-                                        @click="register">Complete Registration</button>
+                                    <button :disabled="!canRegister" type="button" class="submit" @click="register">Complete
+                                        Registration</button>
                                 </div>
                             </div>
                         </q-carousel-slide>
@@ -50,8 +50,8 @@
 
 <script>
 import {
-  useAuthStore,
-  useMainAppStore,
+    useAuthStore,
+    useMainAppStore,
 } from '../../../lib/store.js';
 import { UserRegister } from '../../../utils/apiRequest';
 import formInput from '../../input/input.vue';
@@ -191,6 +191,10 @@ export default {
                         _this.auth.setAuth('authLoader', false);
                         _this.mainApp.setApp('authModal', false)
                     })
+                    _this.mainApp.setApp('snackbar', {
+                        active: false,
+                        component: null
+                    })
                 }, err => {
                     _this.backToRegistration()
                     const keys = Object.keys(err);
@@ -207,6 +211,4 @@ export default {
     }
 }
 </script>
-<style>
-
-</style>
+<style></style>

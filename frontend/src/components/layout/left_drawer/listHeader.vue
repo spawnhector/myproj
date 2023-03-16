@@ -1,9 +1,9 @@
 <template>
-    <q-item-section avatar>
+    <q-item-section class="items-center" avatar>
         <q-icon :class="color" :name="trend" />
     </q-item-section>
     <q-item-section> {{ pair }} </q-item-section>
-    <q-item-section side>
+    <q-item-section class="items-center" side>
         <div class="row items-center">
             <span :class="color" class="f-10 list-percentage">{{ percentageSum }}<q-icon name="percent" /></span>
         </div>
@@ -42,6 +42,4 @@ export default {
     }
 }
 </script>
-<style>
-
-</style>
+<style></style>

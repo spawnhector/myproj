@@ -1,0 +1,6 @@
+{
+  "ignore": ["**/*.test.js"],
+  "exec": "vite --host",
+  "watch": ["src"],
+  "ext": "js,json,vue"
+}
