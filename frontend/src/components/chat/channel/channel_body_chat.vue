@@ -33,7 +33,7 @@
                 </div>
             </transition>
             <q-page-sticky v-show="showScrollTo" position="bottom-right" :offset="fabPos">
-                <q-btn round dense color="primary" icon="arrow_downward" @click="scrollToLastElement" :disable="draggingFab"
+                <q-btn round dense color="#1A1A32" icon="arrow_downward" @click="scrollToLastElement" :disable="draggingFab"
                     v-touch-pan.prevent.mouse="moveFab">
                     <q-badge color="red" floating>4</q-badge>
                 </q-btn>
@@ -169,7 +169,10 @@ export default {
                     let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
                     subContainer.addEventListener('scroll', this.handleScroll)
                     this.lastElementPosition = lastElePosition - subContainer.clientHeight
-                    subContainer.scrollTop = lastElePosition;
+                    subContainer.scrollBy({
+                        top: lastElePosition,
+                        behavior: 'smooth'
+                    });
                 }
             });
         },
