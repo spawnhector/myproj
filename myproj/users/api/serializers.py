@@ -3,9 +3,9 @@ from rest_framework import serializers,validators
 from myproj.users.models import NewUser
 from myproj.schannels.models import SChannel
 from myproj.subscriber.models import Subscriber
+from myproj.signals.models import Signals
 
 # User = get_user_model()
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -43,14 +43,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = NewUser.objects.create_user(email,username,full_name,password)
         return user
 
-
 class SubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscriber
         fields = '__all__'
 
+class SignalsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Signals
+        fields = '__all__'
+
 class ChannelSerializer(serializers.ModelSerializer):
     subscribers = SubscriberSerializer(many=True, read_only=True)
+    signals = SignalsSerializer(many=True, read_only=True)
     class Meta:
         model = SChannel
-        fields = ('id','channel_name','subscribers')
+        fields = ('id','channel_name','subscribers','signals')

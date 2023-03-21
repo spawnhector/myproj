@@ -111,23 +111,25 @@ services:
 
   trade_socket:
     container_name: trade_socket_server
-    restart: always
-    build:
-      context: ./trade_socket
-      dockerfile: Dockerfile
     image: trade_socket:latest
+    # restart: always
+    build:
+      context: .
+      dockerfile: ./trade_socket/Dockerfile
     ports:
       - "8080-8099:8080-8099"
     depends_on:
       - postgres
     env_file:
       - ./.envs/.local/.postgres
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.local
+      - USE_DOCKER=yes
     command: /start
     networks:
       - my_socket_ipc_network
     volumes:
-      - ./trade_socket:/trade_socket:z
-      - ./myproj:/app/myproj:z
+      - .:/app:z
     tty: true
 
   reddis:

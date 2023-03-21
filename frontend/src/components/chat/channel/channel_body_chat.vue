@@ -198,7 +198,13 @@ export default {
         this.scrollToLastElement()
     },
     mounted() {
-        this.getChannelChatData(this.currentChannel)
+        // this.getChannelChatData(this.currentChannel)
+        const socket = new WebSocket('ws://localhost:8000/ws/test_signals/GBPUSD/client/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909');
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            console.log(data.message);
+        };
     }
 }
 </script>

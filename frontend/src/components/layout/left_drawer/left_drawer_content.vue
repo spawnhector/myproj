@@ -160,7 +160,7 @@ export default {
             };
         },
         getSignals: function () {
-            this.createWebSocket()
+            // this.createWebSocket()
         }
     },
     mounted() {

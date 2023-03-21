@@ -13,6 +13,7 @@ from pathlib import Path
 from channels.security.websocket import AllowedHostsOriginValidator
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
+from .middleware.TokenAuthMiddlewareStack import TokenAuthMiddlewareStack
 
 from django.core.asgi import get_asgi_application
 
@@ -36,13 +37,11 @@ from config import routing
 application = ProtocolTypeRouter({
     # "https": django_application,
     "http": django_application,
-   "websocket": AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
+   "websocket": TokenAuthMiddlewareStack(
             URLRouter(
                 routing.websocket_urlpatterns
-            ),
-        )
-    ),
+            )
+        ),
 })
 
 # async def application(scope, receive, send):

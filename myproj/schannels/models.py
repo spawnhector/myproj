@@ -15,7 +15,7 @@ class ChannelAccountManager(models.Manager):
 class SChannel(models.Model):
     channel_name = models.CharField(max_length=150, unique=True)
     subscribers = models.ManyToManyField('subscriber.Subscriber',blank=True)
+    signals = models.ManyToManyField('signals.Signals',blank=True)
     objects = ChannelAccountManager()
     REQUIRED_FIELDS = ['channel_name']
-
 

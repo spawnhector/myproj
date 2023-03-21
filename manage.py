@@ -27,5 +27,6 @@ if __name__ == "__main__":
     # myproj directory.
     current_path = Path(__file__).parent.resolve()
     sys.path.append(str(current_path / "myproj"))
+    sys.path.append(str(current_path / "trade_socket"))
 
     execute_from_command_line(sys.argv)

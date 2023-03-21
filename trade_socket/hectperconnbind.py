@@ -1,3 +1,13 @@
+import os
+import sys
+from pathlib import Path
+ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent
+sys.path.append(str(ROOT_DIR / "config"))
+sys.path.append(str(ROOT_DIR / "myproj"))
+
+# from schannels.models import SChannel
+# from responder import test
+
 import psycopg2
 import threading
 import socket
@@ -5,7 +15,7 @@ import asyncio
 import json
 import websockets
 from datetime import datetime
-
+from asgiref.sync import async_to_sync
 
 class RateLimiter:
     def __init__(self, rate, per):
@@ -33,7 +43,7 @@ async def echo(websocket, path):
         await rate_limiter.acquire()
         await websocket.send(message)
 
-currencyDataFile = "currencyData.txt"
+currencyDataFile = "trade_socket/currencyData.txt"
 HOST = socket.gethostbyname('trade_socket_server')
 def get_connection():
     try:
@@ -62,7 +72,6 @@ def create_signal_socket(port):
             msg = connection.recv(1024).decode()
             if not msg:
                 break
-            # print(msg)
             updateTradeDataBase(msg)
         connection.close()
         s.close()
@@ -94,8 +103,6 @@ def create_currency_data_socket(port):
         print("there was an error resolving the host")
         sys.exit()
 
-import sys
-from pathlib import Path
 file = Path(__file__). resolve()
 package_root_directory = file.parents [1]
 sys.path.append(str(package_root_directory))

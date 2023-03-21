@@ -77,9 +77,11 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "trade_socket",
     "myproj.users",
     "myproj.schannels",
-    "myproj.subscriber"
+    "myproj.subscriber",
+    "myproj.signals"
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -96,6 +98,7 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [('reddis_layer', 6379)],
         },
+        "AUTH_MIDDLEWARE": "config.middleware.TokenAuthMiddlewareStack",
     },
 }
 

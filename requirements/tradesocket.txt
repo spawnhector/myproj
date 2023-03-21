@@ -1,0 +1,4 @@
+SQLAlchemy
+websockets
+asgiref
+websocket-client
