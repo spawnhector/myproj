@@ -7,14 +7,12 @@ from channels.generic.websocket import WebsocketConsumer
 
 class SignalConsumer(WebsocketConsumer):
     def connect(self):
-        self.server_name = self.scope["url_route"]["kwargs"]["server_name"]
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = "signals_%s" % self.room_name
         # # Join room group
-        if self.server_name == "client":
-            async_to_sync(self.channel_layer.group_add)(
-                self.room_group_name, self.channel_name
-            )
+        async_to_sync(self.channel_layer.group_add)(
+            self.room_group_name, self.channel_name
+        )
 
         self.accept()
 

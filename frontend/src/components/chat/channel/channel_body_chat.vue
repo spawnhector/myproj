@@ -3,27 +3,23 @@
         <q-scroll-area :thumb-style="thumbStyle" :bar-style="barStyle" :style="style" ref="channelChatBody">
             <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
                 <div v-show="showChatData" class="channel-chat-body">
-                    <div v-for="(chats, mainKey) in conversations" :key="`${chats[0][0]}-conversation-start-${mainKey}`"
-                        class="item">
+                    <div v-for="(chats, mainKey) in conversations"
+                        :key="`${chats[0].trade_ticket}-conversation-start-${mainKey}`" class="item">
                         <div class="conversation-start">
-                            <span>
-                                <div>
-                                    <q-chip size="sm" square color="deep-orange" text-color="white"> New Signal </q-chip>
-                                </div> {{ mainKey }}
-                            </span>
+                            <ConversationStart :mainKey="mainKey" />
                         </div>
-                        <div v-for="(chat, subKey) in chats" :key="`${chat[0]}-chat-${subKey}`" class="bubble"
+                        <div v-for="(chat, subKey) in chats" :key="`${chat.id}-chat-${subKey}`" class="bubble"
                             :class="getChatClass(chat).main">
                             <q-chip square size="lg">
-                                <q-avatar font-size="13px" :color="getChatClass(chat).sub" text-color="white">{{ chat[1]
-                                }}</q-avatar>
+                                <q-avatar font-size="13px" :color="getChatClass(chat).sub" text-color="white">{{
+                                    chat.trade_type }}</q-avatar>
                                 <div style="font-size: 12px;">
-                                    <div>@{{ chat[2] }} </div>
+                                    <div>@{{ chat.trade_price }} </div>
                                     <div class="row">
-                                        <div class="col text-container"><span class="truncate">Take profit: {{ chat[3]
-                                        }}</span></div>
-                                        <div class="col text-container"><span class="truncate">Trade Status: {{ chat[5] }}
-                                                <q-badge rounded floating color="green" /></span>
+                                        <div class="col text-container"><span class="truncate">Take profit: {{
+                                            chat.take_profit }}</span></div>
+                                        <div class="col text-container"><span class="truncate">Trade Status: {{
+                                            chat.trade_status }} <q-badge rounded floating color="green" /></span>
                                         </div>
                                     </div>
                                 </div>
@@ -35,7 +31,7 @@
             <q-page-sticky v-show="showScrollTo" position="bottom-right" :offset="fabPos">
                 <q-btn round dense color="#1A1A32" icon="arrow_downward" @click="scrollToLastElement" :disable="draggingFab"
                     v-touch-pan.prevent.mouse="moveFab">
-                    <q-badge color="red" floating>4</q-badge>
+                    <q-badge v-show="gotNewSignal" color="red" floating>{{ newSignalCount }}</q-badge>
                 </q-btn>
             </q-page-sticky>
         </q-scroll-area>
@@ -46,9 +42,12 @@
 <script>
 import { useQuasar } from 'quasar';
 
+import ConversationStart from './conversation_start.vue';
+
 export default {
     name: 'ChannelBodyChat',
     components: {
+        ConversationStart
     },
     watch: {
         'currentChannel': {
@@ -56,7 +55,7 @@ export default {
                 this.getChannelChatData(channel)
             },
             deep: true
-        }
+        },
     },
     props: ['currentChannel'],
     computed: {
@@ -87,10 +86,12 @@ export default {
         const $q = useQuasar();
         let fabPos = [18, 18];
         let draggingFab = false;
+        let newSignalCount = 0;
         return {
             $q,
             fabPos,
             draggingFab,
+            newSignalCount,
             loading: false,
             showChatData: false,
             socket: null,
@@ -99,7 +100,9 @@ export default {
             interval: 60000, // interval in milliseconds
             conversations: {},
             lastElementPosition: null,
-            showScrollTo: false
+            showScrollTo: false,
+            container: undefined,
+            subContainer: undefined
         }
     },
     methods: {
@@ -118,7 +121,7 @@ export default {
         groupByIndex(list) {
             const result = {};
             for (const item of list) {
-                const key = item[4];
+                const key = item.trade_date;
                 if (!result[key]) {
                     result[key] = [];
                 }
@@ -128,15 +131,18 @@ export default {
         },
         createWebSocket(currency) {
             let _this = this;
-            this.socket = new WebSocket(`ws://localhost:8000/ws/signals/${currency}/`);
+            this.socket = new WebSocket(`ws://localhost:8000/ws/test_signals/${currency}/client/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909`);
             this.socket.onopen = function (event) {
                 _this.socketAction();
             };
             this.socket.onmessage = function (event) {
                 let data = JSON.parse(event.data)
-                _this.conversations = _this.groupByIndex(data.message)
+                let newSignal = _this.groupByIndex(data.message.signals)
+                _this.gotNewSignal(newSignal)
+                _this.conversations = newSignal
                 _this.loading = false
                 _this.showChatData = true
+                _this.updateLastElementPosition()
             };
             this.socket.onclose = function (event) {
             };
@@ -154,32 +160,45 @@ export default {
                 main: {
                     'you': true,
                     'me': false,
-                    'buy': chat[1] == 'Buy',
-                    'sell': chat[1] == 'Sell'
+                    'buy': chat.trade_type == 'Buy',
+                    'sell': chat.trade_type == 'Sell'
                 },
-                sub: chat[1] == 'Buy' ? 'green' : 'red'
+                sub: chat.trade_type == 'Buy' ? 'green' : 'red'
             }
         },
         scrollToLastElement() {
             this.$nextTick(() => {
-                const container = this.$refs.channelChatBody.$el;
-                const subContainer = container.querySelector('.q-scrollarea__container');
-                const lastElement = subContainer.querySelector('.item:last-child');
+                this.container = this.$refs.channelChatBody.$el;
+                this.subContainer = this.container.querySelector('.q-scrollarea__container');
+                const lastElement = this.subContainer.querySelector('.item:last-child');
                 if (lastElement) {
                     let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
-                    subContainer.addEventListener('scroll', this.handleScroll)
-                    this.lastElementPosition = lastElePosition - subContainer.clientHeight
-                    subContainer.scrollBy({
+                    this.subContainer.addEventListener('scroll', this.handleScroll)
+                    this.lastElementPosition = lastElePosition - this.subContainer.clientHeight
+                    this.handleScroll()
+                    this.subContainer.scrollBy({
                         top: lastElePosition,
                         behavior: 'smooth'
                     });
                 }
             });
         },
+        updateLastElementPosition() {
+            if (!this.container) {
+                this.container = this.$refs.channelChatBody.$el;
+                this.subContainer = this.container.querySelector('.q-scrollarea__container');
+            }
+            const lastElement = this.subContainer.querySelector('.item:last-child');
+            if (lastElement) {
+                this.subContainer.addEventListener('scroll', this.handleScroll)
+                let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
+                this.lastElementPosition = lastElePosition - this.subContainer.clientHeight
+                this.handleScroll()
+            }
+        },
         handleScroll() {
-            const container = this.$refs.channelChatBody.$el;
-            const subContainer = container.querySelector('.q-scrollarea__container');
-            if (subContainer.scrollTop < this.lastElementPosition) {
+            // console.log(this.lastElementPosition)
+            if (this.subContainer.scrollTop < this.lastElementPosition) {
                 this.showScrollTo = true;
             } else {
                 this.showScrollTo = false;
@@ -192,19 +211,24 @@ export default {
                 this.fabPos[0] - ev.delta.x,
                 this.fabPos[1] - ev.delta.y
             ]
+        },
+        countSignal(newSignal) {
+            let total = 0;
+            Object.entries(newSignal).forEach((sig) => {
+                total = total + sig[1].length
+            })
+            return total
+        },
+        gotNewSignal(newSignal) {
+            console.log(this.countSignal(newSignal))
+
         }
     },
     updated() {
-        this.scrollToLastElement()
+        // this.scrollToLastElement()
     },
     mounted() {
-        // this.getChannelChatData(this.currentChannel)
-        const socket = new WebSocket('ws://localhost:8000/ws/test_signals/GBPUSD/client/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909');
-
-        socket.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            console.log(data.message);
-        };
+        this.getChannelChatData(this.currentChannel)
     }
 }
 </script>

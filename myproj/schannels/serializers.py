@@ -4,4 +4,4 @@ from myproj.schannels.models import SChannel
 class ChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = SChannel
-        fields = ["channel_name"]
+        fields = '__all__'

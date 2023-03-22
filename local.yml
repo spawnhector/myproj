@@ -112,7 +112,7 @@ services:
   trade_socket:
     container_name: trade_socket_server
     image: trade_socket:latest
-    # restart: always
+    restart: always
     build:
       context: .
       dockerfile: ./trade_socket/Dockerfile

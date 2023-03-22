@@ -58,4 +58,4 @@ class ChannelSerializer(serializers.ModelSerializer):
     signals = SignalsSerializer(many=True, read_only=True)
     class Meta:
         model = SChannel
-        fields = ('id','channel_name','subscribers','signals')
+        fields = '__all__'
