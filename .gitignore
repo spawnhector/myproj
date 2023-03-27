@@ -277,4 +277,3 @@ myproj/media/
 .envs/*
 !.envs/.local/
 trade_socket/currencyData.txt
-trade_socket/currencyData.txt
