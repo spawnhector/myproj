@@ -109,28 +109,28 @@ services:
     networks:
       - my_socket_ipc_network
 
-  trade_socket:
-    container_name: trade_socket_server
-    image: trade_socket:latest
-    restart: always
-    build:
-      context: .
-      dockerfile: ./trade_socket/Dockerfile
-    ports:
-      - "8080-8099:8080-8099"
-    depends_on:
-      - postgres
-    env_file:
-      - ./.envs/.local/.postgres
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.local
-      - USE_DOCKER=yes
-    command: /start
-    networks:
-      - my_socket_ipc_network
-    volumes:
-      - .:/app:z
-    tty: true
+  # trade_socket:
+  #   container_name: trade_socket_server
+  #   image: trade_socket:latest
+  #   restart: always
+  #   build:
+  #     context: .
+  #     dockerfile: ./trade_socket/Dockerfile
+  #   ports:
+  #     - "8080-8099:8080-8099"
+  #   depends_on:
+  #     - postgres
+  #   env_file:
+  #     - ./.envs/.local/.postgres
+  #   environment:
+  #     - DJANGO_SETTINGS_MODULE=config.settings.local
+  #     - USE_DOCKER=yes
+  #   command: /start
+  #   networks:
+  #     - my_socket_ipc_network
+  #   volumes:
+  #     - .:/app:z
+  #   tty: true
 
   reddis:
     container_name: reddis_layer

@@ -6,67 +6,84 @@ import psycopg2
 from myproj.schannels.models import SChannel
 from myproj.signals.models import Signals
 from myproj.users.api.serializers import ChannelSerializer
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from channels.layers import get_channel_layer
 
-class MyConsumer(WebsocketConsumer):
+class MyConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super(MyConsumer, self).__init__(*args, **kwargs)
+        self.open_connections = set()
         self.addedChannelSignalsResult = False
 
-
-    def connect(self):
+    async def connect(self):
         self.server_name = self.scope["url_route"]["kwargs"]["server_name"]
-        # # Join room group
-        if self.server_name == "client":
-            self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-            self.room_group_name = "signals_%s" % self.room_name
-            async_to_sync(self.channel_layer.group_add)(
-                self.room_group_name, self.channel_name
-            )
-        self.accept()
+        await self.accept()
 
-    def disconnect(self, close_code):
-        pass
+    async def disconnect(self, close_code):
+        await self.close()
 
-    def receive(self, text_data):
+    async def receive(self, text_data):
         # # # Send message to room group
         if self.server_name == "trade_socket":
             self.dict_obj = eval(text_data)
             if self.dict_obj['trade_status'] == 'Open':
-                self.addedChannelSignalsResult = self.addChannelSignals(self.dict_obj)
+                self.addedChannelSignalsResult = await database_sync_to_async(self.addChannelSignals)()
             else:
-                self.addedChannelSignalsResult = self.updateChannelSignals(self.dict_obj)
-
+                self.addedChannelSignalsResult = await database_sync_to_async(self.updateChannelSignals)()
             self.room_group_name = "signals_%s" % self.dict_obj['currency']
         else:
-            self.addedChannelSignalsResult = self.getChannelData(self.room_name)
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name, {"type": 'client', "message": self.addedChannelSignalsResult}
-        )
+            message = json.loads(text_data)
+            self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+            self.room_group_name = "signals_%s" % self.room_name
+            if message.get('action') == 'join_group':
+                self.room_action = 'join_group'
+                await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+                await self.send_group_joined_message()
+            elif message.get('action') == 'leave_group':
+                self.room_action = 'leave_group'
+                await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+                await self.send_group_left_message()
 
-    def addChannelSignals(self,tradeData):
-        channel_by_name = SChannel.objects.get(channel_name=tradeData['currency'])
+    async def leave_all_groups(self):
+        # Disconnect from the WebSocket if no more groups are joined
+        groups = await self.channel_layer.group_channels(self.room_group_name)
+        if len(groups) == 0:
+            await self.close()
+
+    async def send_group_joined_message(self):
+        message = await database_sync_to_async(self.getChannelData)()
+        await self.channel_layer.group_send(self.room_group_name, {"type": 'client', "message": message})
+
+    async def send_group_left_message(self):
+        message = {'action': 'group_left', 'group_name': self.room_group_name}
+        await self.send(text_data=json.dumps(message))
+
+    def addChannelSignals(self):
+        channel_by_name = SChannel.objects.get(channel_name=self.dict_obj['currency'])
         if channel_by_name:
             result_id = channel_by_name.id
             app_channel = SChannel(id=result_id)
-            signal = Signals.objects.add_signal(result_id,tradeData)
+            signal = Signals.objects.add_signal(result_id,self.dict_obj)
             app_channel.signals.add(signal.id)
             app_channels = ChannelSerializer(channel_by_name)
             return app_channels.data
 
-    def updateChannelSignals(self,tradeData):
-        signal_by_ticket = Signals.objects.get(trade_ticket=tradeData['trade_ticket'])
+    def updateChannelSignals(self):
+        signal_by_ticket = Signals.objects.get(trade_ticket=self.dict_obj['trade_ticket'])
         if signal_by_ticket:
             result_id = signal_by_ticket.id
             app_signal = Signals(id=result_id)
             print(app_signal)
 
-    def getChannelData(self,channel_name):
-        channel_by_name = SChannel.objects.get(channel_name=channel_name)
+    def getChannelData(self):
+        channel_by_name = SChannel.objects.get(channel_name=self.room_name)
         app_channels = ChannelSerializer(channel_by_name)
         return app_channels.data
 
-    def client(self, event):
-        self.send(text_data=json.dumps({
+    async def client(self, event):
+        await self.send(text_data=json.dumps({
+            'action': 'group_joined',
             'message':event['message']
         }))

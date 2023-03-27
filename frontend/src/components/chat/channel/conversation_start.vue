@@ -1,6 +1,6 @@
 <template>
     <span>
-        <div>
+        <div :class="[newSignal ? 'new' : '']" :ref="`message[${mainKey}]`">
             <q-chip size="sm" v-show="newSignal" square color="deep-orange" text-color="white"> New Signal </q-chip>
         </div> {{ dateToHuman(mainKey) }}
     </span>

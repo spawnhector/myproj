@@ -2,11 +2,17 @@
     <div>
         <q-scroll-area :thumb-style="thumbStyle" :bar-style="barStyle" :style="style" ref="channelChatBody">
             <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-                <div v-show="showChatData" class="channel-chat-body">
+                <div v-show="showChatData" class="channel-chat-body" v-scroll="handleScroll">
                     <div v-for="(chats, mainKey) in conversations"
                         :key="`${chats[0].trade_ticket}-conversation-start-${mainKey}`" class="item">
                         <div class="conversation-start">
-                            <ConversationStart :mainKey="mainKey" />
+                            <span>
+                                <div :class="[newSignals[mainKey] ? 'new' : '']" :ref="`${mainKey}`" :name="mainKey">
+                                    <q-chip size="sm" v-show="newSignals[mainKey]" square color="deep-orange"
+                                        text-color="white"> New Signal </q-chip>
+                                </div> {{ dateToHuman(mainKey) }}
+                            </span>
+                            <!-- <ConversationStart :mainKey="mainKey" /> -->
                         </div>
                         <div v-for="(chat, subKey) in chats" :key="`${chat.id}-chat-${subKey}`" class="bubble"
                             :class="getChatClass(chat).main">
@@ -31,7 +37,7 @@
             <q-page-sticky v-show="showScrollTo" position="bottom-right" :offset="fabPos">
                 <q-btn round dense color="#1A1A32" icon="arrow_downward" @click="scrollToLastElement" :disable="draggingFab"
                     v-touch-pan.prevent.mouse="moveFab">
-                    <q-badge v-show="gotNewSignal" color="red" floating>{{ newSignalCount }}</q-badge>
+                    <q-badge v-show="newSignalCount > 0" color="red" floating>{{ newSignalCount }}</q-badge>
                 </q-btn>
             </q-page-sticky>
         </q-scroll-area>
@@ -52,7 +58,32 @@ export default {
     watch: {
         'currentChannel': {
             handler(channel, before) {
+                if (this.socket !== null) {
+                    const message = { action: 'leave_group' };
+                    this.socket.send(JSON.stringify(message));
+                }
                 this.getChannelChatData(channel)
+            },
+            deep: true
+        },
+        'conversations': {
+            handler(newSignal, oldSignal) {
+                let _this = this;
+                if (this.isNewChannel) {
+                    this.scrollToLastElement();
+                    this.isNewChannel = false;
+                    return;
+                }
+                let signalKeys = this.findNewSignals(newSignal, oldSignal);
+                if (signalKeys.length == 0) return;
+                signalKeys.forEach(signalKey => _this.newSignals[signalKey] = true);
+                this.newSignalCount = this.countSignal()
+                function showScrollTo(messageRect, containerRect) {
+                    const message = messageRect.getBoundingClientRect();
+                    const container = containerRect.getBoundingClientRect();
+                    if (message.top > container.bottom) _this.showScrollTo = true;
+                }
+                this.getNewSignals(showScrollTo)
             },
             deep: true
         },
@@ -86,11 +117,13 @@ export default {
         const $q = useQuasar();
         let fabPos = [18, 18];
         let draggingFab = false;
+        let newSignals = {};
         let newSignalCount = 0;
         return {
             $q,
             fabPos,
             draggingFab,
+            newSignals,
             newSignalCount,
             loading: false,
             showChatData: false,
@@ -98,11 +131,12 @@ export default {
             requests: 0,
             limit: 1000, // number of requests per minute
             interval: 60000, // interval in milliseconds
-            conversations: {},
+            conversations: false,
             lastElementPosition: null,
             showScrollTo: false,
             container: undefined,
-            subContainer: undefined
+            subContainer: undefined,
+            isNewChannel: true
         }
     },
     methods: {
@@ -115,7 +149,8 @@ export default {
                 this.lastCheck = Date.now();
                 this.requests = 0;
             }
-            this.socket.send(``);
+            const message = { action: 'join_group' };
+            this.socket.send(JSON.stringify(message));
             this.requests++;
         },
         groupByIndex(list) {
@@ -131,23 +166,41 @@ export default {
         },
         createWebSocket(currency) {
             let _this = this;
-            this.socket = new WebSocket(`ws://localhost:8000/ws/test_signals/${currency}/client/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909`);
-            this.socket.onopen = function (event) {
+            _this.socket = new WebSocket(`ws://localhost:8000/ws/test_signals/${currency}/client/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909`);
+
+            let timeout = setTimeout(function () {
+                if (_this.socket.readyState !== WebSocket.CLOSED) {
+                    const message = { action: 'leave_group' };
+                    _this.socket.send(JSON.stringify(message));
+                    _this.socket.close();
+                    _this.socket = null;
+                    console.log('WebSocket timed out');
+                }
+            }, 5000);
+            _this.socket.onopen = function (event) {
                 _this.socketAction();
             };
-            this.socket.onmessage = function (event) {
-                let data = JSON.parse(event.data)
-                let newSignal = _this.groupByIndex(data.message.signals)
-                _this.gotNewSignal(newSignal)
-                _this.conversations = newSignal
-                _this.loading = false
-                _this.showChatData = true
-                _this.updateLastElementPosition()
+            _this.socket.onmessage = function (event) {
+                const message = JSON.parse(event.data);
+                if (message.action === 'group_joined') {
+                    _this.conversations = _this.groupByIndex(message.message.signals)
+                    _this.loading = false
+                    _this.showChatData = true
+                } else if (message.action === 'group_left') {
+                    _this.newSignalCount = 0;
+                    _this.showScrollTo = false;
+                    _this.newSignals = {};
+                    _this.isNewChannel = true;
+                }
+                clearTimeout(timeout);
             };
-            this.socket.onclose = function (event) {
+            _this.socket.onclose = function (event) {
+                console.log('chat channel closed')
+                clearTimeout(timeout);
             };
-            this.socket.onerror = function (error) {
-                console.error(`WebSocket error: ${error}`);
+            _this.socket.onerror = function (error) {
+                console.log(`WebSocket error: ${JSON.stringify(error)}`);
+                clearTimeout(timeout);
             };
         },
         getChannelChatData(data) {
@@ -173,9 +226,7 @@ export default {
                 const lastElement = this.subContainer.querySelector('.item:last-child');
                 if (lastElement) {
                     let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
-                    this.subContainer.addEventListener('scroll', this.handleScroll)
                     this.lastElementPosition = lastElePosition - this.subContainer.clientHeight
-                    this.handleScroll()
                     this.subContainer.scrollBy({
                         top: lastElePosition,
                         behavior: 'smooth'
@@ -183,26 +234,30 @@ export default {
                 }
             });
         },
-        updateLastElementPosition() {
-            if (!this.container) {
-                this.container = this.$refs.channelChatBody.$el;
-                this.subContainer = this.container.querySelector('.q-scrollarea__container');
-            }
-            const lastElement = this.subContainer.querySelector('.item:last-child');
-            if (lastElement) {
-                this.subContainer.addEventListener('scroll', this.handleScroll)
-                let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
-                this.lastElementPosition = lastElePosition - this.subContainer.clientHeight
-                this.handleScroll()
-            }
+        getNewSignals(callback) {
+            this.container = this.$refs.channelChatBody.$el;
+            this.subContainer = this.container.querySelector('.q-scrollarea__container');
+            const messageRefs = Object.values(this.$refs).filter(ref => ref[0] instanceof HTMLElement && ref[0].classList.contains('new'));
+            if (messageRefs.length == 0) return;
+            messageRefs.forEach(element => callback(element[0], this.subContainer));
         },
         handleScroll() {
-            // console.log(this.lastElementPosition)
-            if (this.subContainer.scrollTop < this.lastElementPosition) {
-                this.showScrollTo = true;
-            } else {
-                this.showScrollTo = false;
+            let _this = this;
+            function decrementSignal(messageRect, containerRect) {
+                const message = messageRect.getBoundingClientRect();
+                const container = containerRect.getBoundingClientRect();
+                const lastElement = containerRect.querySelector('.item:last-child');
+                if (lastElement) {
+                    let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
+                    let lastElementPosition = lastElePosition - containerRect.clientHeight
+                    if (containerRect.scrollTop >= lastElementPosition) _this.showScrollTo = false;
+                }
+                if (message.top <= container.bottom) {
+                    if (_this.newSignals[messageRect.getAttribute('name')]) _this.newSignals[messageRect.getAttribute('name')] = false;
+                    _this.newSignalCount = _this.countSignal()
+                }
             }
+            _this.getNewSignals(decrementSignal)
         },
         moveFab(ev) {
             this.draggingFab = ev.isFirst !== true && ev.isFinal !== true
@@ -212,23 +267,34 @@ export default {
                 this.fabPos[1] - ev.delta.y
             ]
         },
-        countSignal(newSignal) {
+        countSignal() {
             let total = 0;
-            Object.entries(newSignal).forEach((sig) => {
-                total = total + sig[1].length
+            Object.entries(this.newSignals).forEach((sig) => {
+                if (sig[1]) total += 1
             })
             return total
         },
-        gotNewSignal(newSignal) {
-            console.log(this.countSignal(newSignal))
-
+        findNewSignals(a, b) {
+            const signalsKey = [];
+            for (const key in a) {
+                if (!(key in b)) {
+                    signalsKey.push(key);
+                }
+            }
+            return signalsKey;
+        },
+        dateToHuman(datetimeString) {
+            const datetime = new Date(datetimeString);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true };
+            return datetime.toLocaleString('en-US', options);
         }
     },
     updated() {
-        // this.scrollToLastElement()
+
     },
-    mounted() {
+    created() {
         this.getChannelChatData(this.currentChannel)
+
     }
 }
 </script>
