@@ -17,13 +17,11 @@
             </div>
             <q-chip size="30px">
                 <q-skeleton v-if="skeleton" type="QAvatar" class="chat_list_skeleton_avatar" />
-                <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{
-                    channel.channel
+                <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{ channel.channel
                 }}</span></q-avatar>
                 <q-item-section>
                     <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_top" />
-                    <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }}
-                    </q-item-label>
+                    <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }} </q-item-label>
                     <q-item-label class="channel__summary" caption>
                         <q-icon name="check" v-if="channel.sent" />
                         <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_bottom" />
@@ -35,13 +33,11 @@
         <span class="container_items" v-if="channel.unlocked" @click="setCurrentChannel">
             <q-chip size="30px" :class="{ active_left_drawer_container_items: link === channel.id }">
                 <q-skeleton v-if="skeleton" type="QAvatar" class="chat_list_skeleton_avatar" />
-                <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{
-                    channel.channel
+                <q-avatar v-if="!skeleton" color="red" text-color="white"><span style="font-size:13px">{{ channel.channel
                 }}</span></q-avatar>
                 <q-item-section>
                     <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_top" />
-                    <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }}
-                    </q-item-label>
+                    <q-item-label v-if="!skeleton" style="font-size:13px;" lines="1"> {{ channel.person }} </q-item-label>
                     <q-item-label class="channel__summary" caption>
                         <q-icon name="check" v-if="channel.sent" />
                         <q-skeleton v-if="skeleton" type="rect" class="chat_list_skeleton_item_label_bottom" />
@@ -208,7 +204,7 @@ export default {
 .container_items
     width: -webkit-fill-available
     .active_left_drawer_container_items
-        background-color: #1A1A32
+        background-color: #24292e
         color: #d7d7d7
         .q-chip__content
             .q-avatar

@@ -35,8 +35,8 @@
                 </div>
             </transition>
             <q-page-sticky v-show="showScrollTo" position="bottom-right" :offset="fabPos">
-                <q-btn round dense color="#1A1A32" icon="arrow_downward" @click="scrollToLastElement" :disable="draggingFab"
-                    v-touch-pan.prevent.mouse="moveFab">
+                <q-btn round dense color="#1A1A32" icon="arrow_downward" @click="scrollToLastElement('smooth')"
+                    :disable="draggingFab" v-touch-pan.prevent.mouse="moveFab">
                     <q-badge v-show="newSignalCount > 0" color="red" floating>{{ newSignalCount }}</q-badge>
                 </q-btn>
             </q-page-sticky>
@@ -63,27 +63,6 @@ export default {
                     this.socket.send(JSON.stringify(message));
                 }
                 this.getChannelChatData(channel)
-            },
-            deep: true
-        },
-        'conversations': {
-            handler(newSignal, oldSignal) {
-                let _this = this;
-                if (this.isNewChannel) {
-                    this.scrollToLastElement();
-                    this.isNewChannel = false;
-                    return;
-                }
-                let signalKeys = this.findNewSignals(newSignal, oldSignal);
-                if (signalKeys.length == 0) return;
-                signalKeys.forEach(signalKey => _this.newSignals[signalKey] = true);
-                this.newSignalCount = this.countSignal()
-                function showScrollTo(messageRect, containerRect) {
-                    const message = messageRect.getBoundingClientRect();
-                    const container = containerRect.getBoundingClientRect();
-                    if (message.top > container.bottom) _this.showScrollTo = true;
-                }
-                this.getNewSignals(showScrollTo)
             },
             deep: true
         },
@@ -186,11 +165,14 @@ export default {
                     _this.conversations = _this.groupByIndex(message.message.signals)
                     _this.loading = false
                     _this.showChatData = true
+                    _this.scrollToLastElement();
                 } else if (message.action === 'group_left') {
                     _this.newSignalCount = 0;
                     _this.showScrollTo = false;
                     _this.newSignals = {};
                     _this.isNewChannel = true;
+                } else if (message.action === 'new_signal') {
+                    _this.checkNewSignal(_this.groupByIndex(message.message.signals))
                 }
                 clearTimeout(timeout);
             };
@@ -202,6 +184,20 @@ export default {
                 console.log(`WebSocket error: ${JSON.stringify(error)}`);
                 clearTimeout(timeout);
             };
+        },
+        checkNewSignal(newSignal) {
+            let _this = this;
+            let signalKeys = this.findNewSignals(newSignal, this.conversations);
+            if (signalKeys.length == 0) return;
+            signalKeys.forEach(signalKey => this.newSignals[signalKey] = true);
+            this.newSignalCount = this.countSignal()
+            this.conversations = newSignal
+            function showScrollTo(messageRect, containerRect, isScrollbarAtBottom) {
+                if (isScrollbarAtBottom) {
+                    _this.showScrollTo = true;
+                }
+            }
+            this.refContainer(showScrollTo)
         },
         getChannelChatData(data) {
             this.loading = true
@@ -219,45 +215,48 @@ export default {
                 sub: chat.trade_type == 'Buy' ? 'green' : 'red'
             }
         },
-        scrollToLastElement() {
+        scrollToLastElement(behavior) {
+            let _this = this
             this.$nextTick(() => {
-                this.container = this.$refs.channelChatBody.$el;
-                this.subContainer = this.container.querySelector('.q-scrollarea__container');
-                const lastElement = this.subContainer.querySelector('.item:last-child');
+                _this.container = _this.$refs.channelChatBody.$el;
+                _this.subContainer = _this.container.querySelector('.q-scrollarea__container');
+                const lastElement = _this.subContainer.querySelector('.item:last-child');
                 if (lastElement) {
                     let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
-                    this.lastElementPosition = lastElePosition - this.subContainer.clientHeight
-                    this.subContainer.scrollBy({
+                    _this.lastElementPosition = lastElePosition - _this.subContainer.clientHeight
+                    _this.subContainer.scrollBy({
                         top: lastElePosition,
-                        behavior: 'smooth'
+                        behavior: behavior
                     });
                 }
             });
         },
-        getNewSignals(callback) {
+        refContainer(callback) {
             this.container = this.$refs.channelChatBody.$el;
             this.subContainer = this.container.querySelector('.q-scrollarea__container');
             const messageRefs = Object.values(this.$refs).filter(ref => ref[0] instanceof HTMLElement && ref[0].classList.contains('new'));
-            if (messageRefs.length == 0) return;
-            messageRefs.forEach(element => callback(element[0], this.subContainer));
+            const isScrollbarAtBottom = this.subContainer.scrollTop >= this.subContainer.scrollHeight - this.subContainer.clientHeight - 28;
+            if (messageRefs.length == 0) callback(false, false, isScrollbarAtBottom);
+            else messageRefs.forEach(element => callback(element[0], this.subContainer, isScrollbarAtBottom));
         },
         handleScroll() {
             let _this = this;
-            function decrementSignal(messageRect, containerRect) {
-                const message = messageRect.getBoundingClientRect();
-                const container = containerRect.getBoundingClientRect();
-                const lastElement = containerRect.querySelector('.item:last-child');
-                if (lastElement) {
-                    let lastElePosition = lastElement.offsetTop + lastElement.offsetHeight;
-                    let lastElementPosition = lastElePosition - containerRect.clientHeight
-                    if (containerRect.scrollTop >= lastElementPosition) _this.showScrollTo = false;
+            function decrementSignal(messageRect, containerRect, isScrollbarAtBottom) {
+                if (isScrollbarAtBottom) {
+                    _this.showScrollTo = false;
+                } else {
+                    _this.showScrollTo = true;
                 }
-                if (message.top <= container.bottom) {
-                    if (_this.newSignals[messageRect.getAttribute('name')]) _this.newSignals[messageRect.getAttribute('name')] = false;
-                    _this.newSignalCount = _this.countSignal()
+                if (messageRect && containerRect) {
+                    const message = messageRect.getBoundingClientRect();
+                    const container = containerRect.getBoundingClientRect();
+                    if (message.top <= container.bottom) {
+                        if (_this.newSignals[messageRect.getAttribute('name')]) _this.newSignals[messageRect.getAttribute('name')] = false;
+                        _this.newSignalCount = _this.countSignal()
+                    }
                 }
             }
-            _this.getNewSignals(decrementSignal)
+            _this.refContainer(decrementSignal)
         },
         moveFab(ev) {
             this.draggingFab = ev.isFirst !== true && ev.isFinal !== true
