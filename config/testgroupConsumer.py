@@ -6,6 +6,7 @@ import psycopg2
 from myproj.schannels.models import SChannel
 from myproj.signals.models import Signals
 from myproj.users.api.serializers import ChannelSerializer
+from myproj.users.api.serializers import SignalsSerializer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
@@ -68,7 +69,16 @@ class MyConsumer(AsyncWebsocketConsumer):
         # await self.channel_layer.group_send(self.room_group_name, {"type": 'client_leave', "message": message})
 
     async def send_group_updated_message(self):
-        message = await database_sync_to_async(self.getChannelData)()
+        message = {'signals':{
+                'id':self.addedChannelSignalsResult.id,
+                'take_profit': self.addedChannelSignalsResult.take_profit,
+                'trade_date': self.addedChannelSignalsResult.trade_date.strftime('%Y-%m-%d %H:%M:%S.%f%z'),
+                'trade_price':self.addedChannelSignalsResult.trade_price,
+                'trade_status': self.addedChannelSignalsResult.trade_status,
+                'trade_ticket':self.addedChannelSignalsResult.trade_ticket,
+                'trade_type': self.addedChannelSignalsResult.trade_type
+            }
+        }
         await self.channel_layer.group_send(self.room_group_name, {"type": 'updated_signal', "message": message})
 
     def addChannelSignals(self):
@@ -78,8 +88,8 @@ class MyConsumer(AsyncWebsocketConsumer):
             app_channel = SChannel(id=result_id)
             signal = Signals.objects.add_signal(result_id,self.dict_obj)
             app_channel.signals.add(signal.id)
-            app_channels = ChannelSerializer(channel_by_name)
-            return app_channels.data
+            app_channels = SignalsSerializer(channel_by_name)
+            return signal
 
     def updateChannelSignals(self):
         signal_by_ticket = Signals.objects.get(trade_ticket=self.dict_obj['trade_ticket'])
@@ -108,5 +118,5 @@ class MyConsumer(AsyncWebsocketConsumer):
     async def updated_signal(self, event):
         await self.send(text_data=json.dumps({
             'action': 'new_signal',
-            'message':event['message']
+            'message': event['message']
         }))
