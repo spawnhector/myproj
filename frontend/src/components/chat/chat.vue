@@ -104,9 +104,11 @@ export default {
             if (this.channelChat.hasSubscribedChannels) {
                 if (this.currentChannelType == 'Free') {
                     console.log(this.currentChannelType, this.currentChannelIndex)
+                    this.channelChat.setState('currentChannel', this.freeChannels[this.currentChannelIndex])
                     return this.freeChannels[this.currentChannelIndex]
                 } else {
                     console.log(this.currentChannelType, this.currentChannelIndex)
+                    this.channelChat.setState('currentChannel', this.paidChannels[this.currentChannelIndex])
                     return this.paidChannels[this.currentChannelIndex]
                 }
             } else {

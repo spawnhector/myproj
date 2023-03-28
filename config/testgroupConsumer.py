@@ -18,16 +18,17 @@ class MyConsumer(AsyncWebsocketConsumer):
         self.addedChannelSignalsResult = False
 
     async def connect(self):
-        self.server_name = self.scope["url_route"]["kwargs"]["server_name"]
         await self.accept()
 
     async def disconnect(self, close_code):
         await self.close()
 
     async def receive(self, text_data):
-        # # # Send message to room group
+        message = json.loads(text_data)
+        self.server_name = message['server_name']
+        # # Send message to room group
         if self.server_name == "trade_socket":
-            self.dict_obj = eval(text_data)
+            self.dict_obj = eval(message['data'])
             self.room_name = self.dict_obj['currency']
             self.room_group_name = "signals_%s" % self.room_name
             if self.dict_obj['trade_status'] == 'Open':
@@ -38,17 +39,15 @@ class MyConsumer(AsyncWebsocketConsumer):
                 await self.send_group_updated_message()
             self.room_group_name = "signals_%s" % self.dict_obj['currency']
         else:
-            message = json.loads(text_data)
-            self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+            self.room_name = message['channel']
             self.room_group_name = "signals_%s" % self.room_name
             if message.get('action') == 'join_group':
                 self.room_action = 'join_group'
                 await self.channel_layer.group_add(self.room_group_name, self.channel_name)
                 await self.send_group_joined_message()
             elif message.get('action') == 'leave_group':
-                self.room_action = 'leave_group'
-                await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
                 await self.send_group_left_message()
+                await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def leave_all_groups(self):
         # Disconnect from the WebSocket if no more groups are joined
@@ -62,7 +61,11 @@ class MyConsumer(AsyncWebsocketConsumer):
 
     async def send_group_left_message(self):
         message = {'action': 'group_left', 'group_name': self.room_group_name}
-        await self.channel_layer.group_send(self.room_group_name, {"type": 'client_leave', "message": message})
+        await self.send(text_data=json.dumps({
+            'action': 'group_left',
+            'message':message
+        }))
+        # await self.channel_layer.group_send(self.room_group_name, {"type": 'client_leave', "message": message})
 
     async def send_group_updated_message(self):
         message = await database_sync_to_async(self.getChannelData)()

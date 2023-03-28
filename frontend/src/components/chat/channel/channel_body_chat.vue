@@ -46,8 +46,13 @@
 </template>
 
 <script>
+import {
+    mapActions,
+    mapState,
+} from 'pinia';
 import { useQuasar } from 'quasar';
 
+import { useChannelChat } from '../../../lib/store';
 import ConversationStart from './conversation_start.vue';
 
 export default {
@@ -55,20 +60,32 @@ export default {
     components: {
         ConversationStart
     },
+    setup() {
+    },
     watch: {
         'currentChannel': {
             handler(channel, before) {
-                if (this.socket !== null) {
-                    const message = { action: 'leave_group' };
-                    this.socket.send(JSON.stringify(message));
+                if (this.ws !== null) {
+                    this.leaveChannel()
                 }
-                this.getChannelChatData(channel)
+                this.joinChannel()
+                // this.getChannelChatData(channel)
             },
             deep: true
         },
     },
-    props: ['currentChannel'],
+    props: [''],
     computed: {
+        ...mapState(useChannelChat, [
+            'ws',
+            'loading',
+            'newSignals',
+            'conversations',
+            'showChatData',
+            'currentChannel',
+            'newSignalCount',
+            'showScrollTo'
+        ]),
         style() {
             let _this = this
             return `height: ${_this.$q.screen.height - 200}px;width: 100%;`
@@ -96,114 +113,30 @@ export default {
         const $q = useQuasar();
         let fabPos = [18, 18];
         let draggingFab = false;
-        let newSignals = {};
-        let newSignalCount = 0;
         return {
             $q,
             fabPos,
             draggingFab,
-            newSignals,
-            newSignalCount,
-            loading: false,
-            showChatData: false,
             socket: null,
             requests: 0,
             limit: 1000, // number of requests per minute
             interval: 60000, // interval in milliseconds
-            conversations: false,
             lastElementPosition: null,
-            showScrollTo: false,
             container: undefined,
             subContainer: undefined,
-            isNewChannel: true
+            isNewChannel: true,
         }
     },
     methods: {
-        socketAction() {
-            if (this.requests >= this.limit) {
-                this.socket.close()
-                return;
-            }
-            if (Date.now() - this.lastCheck > this.interval) {
-                this.lastCheck = Date.now();
-                this.requests = 0;
-            }
-            const message = { action: 'join_group' };
-            this.socket.send(JSON.stringify(message));
-            this.requests++;
-        },
-        groupByIndex(list) {
-            const result = {};
-            for (const item of list) {
-                const key = item.trade_date;
-                if (!result[key]) {
-                    result[key] = [];
-                }
-                result[key].push(item);
-            }
-            return result;
-        },
-        createWebSocket(currency) {
-            let _this = this;
-            _this.socket = new WebSocket(`ws://localhost:8000/ws/test_signals/${currency}/client/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909`);
-
-            let timeout = setTimeout(function () {
-                if (_this.socket.readyState !== WebSocket.CLOSED) {
-                    const message = { action: 'leave_group' };
-                    _this.socket.send(JSON.stringify(message));
-                    _this.socket.close();
-                    _this.socket = null;
-                    console.log('WebSocket timed out');
-                }
-            }, 5000);
-            _this.socket.onopen = function (event) {
-                _this.socketAction();
-            };
-            _this.socket.onmessage = function (event) {
-                const message = JSON.parse(event.data);
-                if (message.action === 'group_joined') {
-                    _this.conversations = _this.groupByIndex(message.message.signals)
-                    _this.loading = false
-                    _this.showChatData = true
-                    _this.scrollToLastElement();
-                } else if (message.action === 'group_left') {
-                    _this.newSignalCount = 0;
-                    _this.showScrollTo = false;
-                    _this.newSignals = {};
-                    _this.isNewChannel = true;
-                } else if (message.action === 'new_signal') {
-                    _this.checkNewSignal(_this.groupByIndex(message.message.signals))
-                }
-                clearTimeout(timeout);
-            };
-            _this.socket.onclose = function (event) {
-                console.log('chat channel closed')
-                clearTimeout(timeout);
-            };
-            _this.socket.onerror = function (error) {
-                console.log(`WebSocket error: ${JSON.stringify(error)}`);
-                clearTimeout(timeout);
-            };
-        },
-        checkNewSignal(newSignal) {
-            let _this = this;
-            let signalKeys = this.findNewSignals(newSignal, this.conversations);
-            if (signalKeys.length == 0) return;
-            signalKeys.forEach(signalKey => this.newSignals[signalKey] = true);
-            this.newSignalCount = this.countSignal()
-            this.conversations = newSignal
-            function showScrollTo(messageRect, containerRect, isScrollbarAtBottom) {
-                if (isScrollbarAtBottom) {
-                    _this.showScrollTo = true;
-                }
-            }
-            this.refContainer(showScrollTo)
-        },
-        getChannelChatData(data) {
-            this.loading = true
-            this.showChatData = false
-            this.createWebSocket(data.channel)
-        },
+        ...mapActions(useChannelChat, [
+            'createChannelSocket',
+            'loadChannelData',
+            'getRefContainer',
+            'leaveChannel',
+            'joinChannel',
+            'handleScroll',
+            'setState'
+        ]),
         getChatClass(chat) {
             return {
                 main: {
@@ -215,7 +148,7 @@ export default {
                 sub: chat.trade_type == 'Buy' ? 'green' : 'red'
             }
         },
-        scrollToLastElement(behavior) {
+        scrollToLastElement(behavior = 'auto') {
             let _this = this
             this.$nextTick(() => {
                 _this.container = _this.$refs.channelChatBody.$el;
@@ -229,7 +162,7 @@ export default {
                         behavior: behavior
                     });
                 }
-            });
+            })
         },
         refContainer(callback) {
             this.container = this.$refs.channelChatBody.$el;
@@ -239,25 +172,6 @@ export default {
             if (messageRefs.length == 0) callback(false, false, isScrollbarAtBottom);
             else messageRefs.forEach(element => callback(element[0], this.subContainer, isScrollbarAtBottom));
         },
-        handleScroll() {
-            let _this = this;
-            function decrementSignal(messageRect, containerRect, isScrollbarAtBottom) {
-                if (isScrollbarAtBottom) {
-                    _this.showScrollTo = false;
-                } else {
-                    _this.showScrollTo = true;
-                }
-                if (messageRect && containerRect) {
-                    const message = messageRect.getBoundingClientRect();
-                    const container = containerRect.getBoundingClientRect();
-                    if (message.top <= container.bottom) {
-                        if (_this.newSignals[messageRect.getAttribute('name')]) _this.newSignals[messageRect.getAttribute('name')] = false;
-                        _this.newSignalCount = _this.countSignal()
-                    }
-                }
-            }
-            _this.refContainer(decrementSignal)
-        },
         moveFab(ev) {
             this.draggingFab = ev.isFirst !== true && ev.isFinal !== true
 
@@ -266,34 +180,22 @@ export default {
                 this.fabPos[1] - ev.delta.y
             ]
         },
-        countSignal() {
-            let total = 0;
-            Object.entries(this.newSignals).forEach((sig) => {
-                if (sig[1]) total += 1
-            })
-            return total
-        },
-        findNewSignals(a, b) {
-            const signalsKey = [];
-            for (const key in a) {
-                if (!(key in b)) {
-                    signalsKey.push(key);
-                }
-            }
-            return signalsKey;
-        },
         dateToHuman(datetimeString) {
             const datetime = new Date(datetimeString);
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true };
             return datetime.toLocaleString('en-US', options);
         }
     },
-    updated() {
-
-    },
     created() {
-        this.getChannelChatData(this.currentChannel)
-
+        if (this.currentChannel) {
+            this.createChannelSocket()
+        }
+    },
+    mounted() {
+        if (this.currentChannel) {
+            this.getRefContainer(this.refContainer)
+            this.loadChannelData(this.scrollToLastElement)
+        }
     }
 }
 </script>

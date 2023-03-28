@@ -21,9 +21,11 @@ currencyDataFile = "trade_socket/currencyData.txt"
 def sendData(data):
     websocket.enableTrace(True)
     ws = websocket.WebSocket()
-    ws.connect("ws://172.18.0.5:8000/ws/test_signals/ALL/trade_socket/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909")
+    ws.connect("ws://172.18.0.6:8000/ws/test_signals/ALL/trade_socket/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909")
     if ws.connected:
-        ws.send(data)
+        channelData = {'server_name': 'trade_socket','data':data}
+        message = json.dumps(channelData)
+        ws.send(message)
     else:
         ws.close()
 def create_signal_socket(port):
