@@ -94,7 +94,8 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = "config.asgi.application"
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "BACKEND": "config.channel_layer.extendredisLayer.ExtendedRedisChannelLayer",
         "CONFIG": {
             "hosts": [('reddis_layer', 6379)],
         },

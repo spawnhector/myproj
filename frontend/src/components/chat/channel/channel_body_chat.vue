@@ -66,7 +66,7 @@ export default {
         'currentChannel': {
             handler(channel, before) {
                 if (this.ws !== null) {
-                    this.leaveChannel()
+                    this.leaveChannel(before)
                 }
                 this.joinChannel()
                 // this.getChannelChatData(channel)

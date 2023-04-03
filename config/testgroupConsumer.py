@@ -9,7 +9,6 @@ from myproj.users.api.serializers import ChannelSerializer
 from myproj.users.api.serializers import SignalsSerializer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from channels.layers import get_channel_layer
 
 class MyConsumer(AsyncWebsocketConsumer):
 
@@ -25,21 +24,9 @@ class MyConsumer(AsyncWebsocketConsumer):
         await self.close()
 
     async def receive(self, text_data):
-        message = json.loads(text_data)
-        self.server_name = message['server_name']
-        # # Send message to room group
-        if self.server_name == "trade_socket":
-            self.dict_obj = eval(message['data'])
-            self.room_name = self.dict_obj['currency']
-            self.room_group_name = "signals_%s" % self.room_name
-            if self.dict_obj['trade_status'] == 'Open':
-                self.addedChannelSignalsResult = await database_sync_to_async(self.addChannelSignals)()
-                await self.send_group_updated_message()
-            else:
-                self.addedChannelSignalsResult = await database_sync_to_async(self.updateChannelSignals)()
-                await self.send_group_updated_message()
-            self.room_group_name = "signals_%s" % self.dict_obj['currency']
-        else:
+        try:
+            message = json.loads(text_data)
+            self.server_name = message['server_name']
             self.room_name = message['channel']
             self.room_group_name = "signals_%s" % self.room_name
             if message.get('action') == 'join_group':
@@ -47,14 +34,9 @@ class MyConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_add(self.room_group_name, self.channel_name)
                 await self.send_group_joined_message()
             elif message.get('action') == 'leave_group':
-                await self.send_group_left_message()
                 await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
-    async def leave_all_groups(self):
-        # Disconnect from the WebSocket if no more groups are joined
-        groups = await self.channel_layer.group_channels(self.room_group_name)
-        if len(groups) == 0:
-            await self.close()
+        except Exception as e:
+            print(f"error sending message: {e}")
 
     async def send_group_joined_message(self):
         message = await database_sync_to_async(self.getChannelData)()
@@ -66,7 +48,6 @@ class MyConsumer(AsyncWebsocketConsumer):
             'action': 'group_left',
             'message':message
         }))
-        # await self.channel_layer.group_send(self.room_group_name, {"type": 'client_leave', "message": message})
 
     async def send_group_updated_message(self):
         message = {'signals':{
@@ -79,7 +60,10 @@ class MyConsumer(AsyncWebsocketConsumer):
                 'trade_type': self.addedChannelSignalsResult.trade_type
             }
         }
-        await self.channel_layer.group_send(self.room_group_name, {"type": 'updated_signal', "message": message})
+        await self.send(text_data=json.dumps({
+            'action': 'new_signal',
+            'message': message
+        }))
 
     def addChannelSignals(self):
         channel_by_name = SChannel.objects.get(channel_name=self.dict_obj['currency'])
@@ -116,7 +100,11 @@ class MyConsumer(AsyncWebsocketConsumer):
         }))
 
     async def updated_signal(self, event):
-        await self.send(text_data=json.dumps({
-            'action': 'new_signal',
-            'message': event['message']
-        }))
+        self.dict_obj = eval(event['message'])
+        if self.dict_obj['trade_status'] == 'Open':
+            self.addedChannelSignalsResult = await database_sync_to_async(self.addChannelSignals)()
+            await self.send_group_updated_message()
+        else:
+            self.addedChannelSignalsResult = await database_sync_to_async(self.updateChannelSignals)()
+            # await self.send_group_updated_message()
+
