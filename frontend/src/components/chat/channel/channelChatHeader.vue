@@ -2,6 +2,7 @@
     <q-header elevated>
         <q-toolbar class="ChannelChatHeader">
             <div class="q-subtitle-1 content" v-html="headerLeft"></div>
+            <channelOnlineVue />
             <q-space />
             <q-btn round flat icon="more_vert">
                 <q-menu auto-close :offset="[110, 0]">
@@ -33,14 +34,16 @@
 
 <script>
 import {
-  useAuthStore,
-  useChannelChat,
-  useMainAppStore,
+    useAuthStore,
+    useChannelChat,
+    useMainAppStore,
 } from '../../../lib/store.js';
+import channelOnlineVue from './channelOnline.vue';
 
 export default {
     name: 'ChannelChatHeader',
     components: {
+        channelOnlineVue
     },
     props: ['currentChannel'],
     data() {
