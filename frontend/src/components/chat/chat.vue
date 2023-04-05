@@ -3,7 +3,7 @@
         <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
             <q-layout v-if="(channels_received) && (freeChannels.length > 0 || paidChannels.length > 0)"
                 v-show="showSimulatedReturnData" view="lHh Lpr lFf" class="shadow-3 chat-container" container>
-                <channelChatHeader :currentChannel="activeChannel" />
+                <channelChatHeader />
                 <div :style="style.chatDrawer">
                     <q-drawer style="background: rgba(255, 255, 255, 0.07) !important" v-model="leftDrawerOpen" bordered
                         :breakpoint="690">
@@ -34,7 +34,7 @@
                 </div>
                 <!-- <Blur blurtype="secondary" /> -->
                 <q-page-container :style="style.pageContainer">
-                    <channelBody :activeChannel="activeChannel" />
+                    <channelBody />
                 </q-page-container>
                 <q-footer style="height: 46px;">
                     <q-toolbar class="row">
@@ -51,6 +51,10 @@
 </template>
 
 <script>
+import {
+    mapActions,
+    mapState,
+} from 'pinia';
 import { useQuasar } from 'quasar';
 
 import {
@@ -82,14 +86,8 @@ export default {
             leftDrawerOpen,
             search: '',
             message: '',
-            currentChannelIndex: channelChat.currentChannelIndex,
-            currentChannelType: channelChat.currentChannelType,
             socket: null,
-            // activeChannel: false,
             channels_received: false,
-            freeChannels: [],
-            paidChannels: [],
-            link: channelChat.link,
             skeleton: true
         }
     },
@@ -100,21 +98,13 @@ export default {
         Blur
     },
     computed: {
-        activeChannel() {
-            if (this.channelChat.hasSubscribedChannels) {
-                if (this.currentChannelType == 'Free') {
-                    console.log(this.currentChannelType, this.currentChannelIndex)
-                    this.channelChat.setState('currentChannel', this.freeChannels[this.currentChannelIndex])
-                    return this.freeChannels[this.currentChannelIndex]
-                } else {
-                    console.log(this.currentChannelType, this.currentChannelIndex)
-                    this.channelChat.setState('currentChannel', this.paidChannels[this.currentChannelIndex])
-                    return this.paidChannels[this.currentChannelIndex]
-                }
-            } else {
-                return false;
-            }
-        },
+        ...mapState(useChannelChat, [
+            'currentChannelIndex',
+            'currentChannelType',
+            'freeChannels',
+            'paidChannels',
+            'link'
+        ]),
         style() {
             let _this = this
             return {
@@ -156,16 +146,6 @@ export default {
             _this.getChatData()
             _this.leftDrawerOpen = val
         })
-        this.$watch('channelChat.link', (val) => {
-            _this.link = val
-        })
-        this.$watch('channelChat.currentChannelIndex', (val) => {
-            _this.currentChannelIndex = val
-        })
-        this.$watch('channelChat.currentChannelType', (val) => {
-            _this.currentChannelType = val
-        })
-
     },
     watch: {
         'channelChat.channels': {
@@ -181,13 +161,13 @@ export default {
                                 if (_this.channelChat.channelClicked) {
                                     if (_this.channelChat.channelClicked == chan.id) {
                                         _this.channelChat.setState('link', chan.id)
-                                        _this.channelChat.setState('currentChannelIndex', chanIndex);
+                                        // _this.channelChat.setState('currentChannelIndex', chanIndex);
                                         _this.channelChat.setState('initialChannelIndex', true);
                                     }
                                 } else {
                                     if (sub.channel_type == 'Free') {
                                         _this.channelChat.setState('link', chan.id)
-                                        _this.channelChat.setState('currentChannelIndex', 0);
+                                        // _this.channelChat.setState('currentChannelIndex', 0);
                                         _this.channelChat.setState('initialChannelIndex', true);
                                     }
                                 }
@@ -210,17 +190,21 @@ export default {
                         paidChan.push(_this.addPaidChannel(chan, false))
                     }
                 })
-                this.freeChannels = freeChan
-                this.paidChannels = paidChan
+                this.channelChat.setState('freeChannels', freeChan)
+                this.channelChat.setState('paidChannels', paidChan)
                 if (hasFreeChannel) _this.channelChat.setState('hasFreeChannel', true);
                 if (!hasFreeChannel) _this.channelChat.setState('tutorial', {
                     ..._this.channelChat.tutorial,
                     active: true
                 });
                 if (!_this.channelChat.channelClicked && (_this.freeChannels.length > 0) && (_this.paidChannels.length > 0)) {
-                    _this.channelChat.setState('currentChannelType', 'Free')
+                    // _this.channelChat.setState('currentChannelType', 'Free')
+                    console.log(_this.currentChannelType, _this.currentChannelIndex)
+                    _this.channelChat.setState('currentChannel', _this.freeChannels[_this.currentChannelIndex])
                 } else {
-                    _this.channelChat.setState('currentChannelType', 'Paid')
+                    // _this.channelChat.setState('currentChannelType', 'Paid')
+                    console.log(_this.currentChannelType, _this.currentChannelIndex)
+                    _this.channelChat.setState('currentChannel', _this.paidChannels[_this.currentChannelIndex])
                 }
                 // console.log(_this.channelChat)
                 _this.channels_received = channel.length > 0 ? true : false;

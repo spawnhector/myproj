@@ -51,9 +51,14 @@
 
 <script>
 import {
-  useAuthStore,
-  useChannelChat,
-  useMainAppStore,
+    mapActions,
+    mapState,
+} from 'pinia';
+
+import {
+    useAuthStore,
+    useChannelChat,
+    useMainAppStore,
 } from '../../../lib/store.js';
 import { SubscribeChannels } from '../../../utils/apiRequest';
 
@@ -75,6 +80,12 @@ export default {
             unlocking: false
         }
     },
+    computed: {
+        ...mapState(useChannelChat, [
+            'freeChannels',
+            'paidChannels',
+        ]),
+    },
     methods: {
         showSubscribe() {
             this.show_subscribe = true
@@ -86,11 +97,15 @@ export default {
             this.channelChat.setState('link', this.channel.id)
             this.channelChat.setState('currentChannelType', this.type)
             this.channelChat.setState('currentChannelIndex', this.index)
+            if (this.type == 'Free') this.channelChat.setState('currentChannel', this.freeChannels[this.index]);
+            else this.channelChat.setState('currentChannel', this.paidChannels[this.index]);
+
         },
         unlockChannel(channel_type) {
             let _this = this
             this.unlocking = true
             this.mainApp.setApp('mainLoader', true)
+            this.channelChat.setState('currentChannelIndex', this.index)
             this.auth.getToken().then(token => {
                 let data = new FormData()
                 data.append('channel', _this.channel.id)
@@ -115,6 +130,7 @@ export default {
                             sent: true
                         })
                     })
+                    _this.channelChat.setState('currentChannelType', channel_type)
                     _this.channelChat.setState('channels', arrBuild)
                 }, err => {
                     console.log(err)

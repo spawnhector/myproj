@@ -34,6 +34,11 @@
 
 <script>
 import {
+    mapActions,
+    mapState,
+} from 'pinia';
+
+import {
     useAuthStore,
     useChannelChat,
     useMainAppStore,
@@ -45,7 +50,7 @@ export default {
     components: {
         channelOnlineVue
     },
-    props: ['currentChannel'],
+    props: [''],
     data() {
         const auth = useAuthStore()
         const channelChat = useChannelChat()
@@ -58,6 +63,9 @@ export default {
         }
     },
     computed: {
+        ...mapState(useChannelChat, [
+            'currentChannel',
+        ]),
         headerLeft() {
             let _this = this;
             let stepperListArr = ['Getting Started', 'Verify Account', 'Get Free Signal'];

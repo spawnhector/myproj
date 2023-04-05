@@ -28,7 +28,7 @@
         <div class="main">
             <div class="main__text-wrapper">
                 <Tutorial v-if="channelChat.tutorial.active" />
-                <ChannelBodyChat :currentChannel="activeChannel" v-if="!channelChat.tutorial.active" />
+                <ChannelBodyChat v-if="!channelChat.tutorial.active" />
             </div>
         </div>
     </div>
@@ -38,9 +38,9 @@
 import { useQuasar } from 'quasar';
 
 import {
-  useAuthStore,
-  useChannelChat,
-  useMainAppStore,
+    useAuthStore,
+    useChannelChat,
+    useMainAppStore,
 } from '../../../lib/store.js';
 import ChannelBodyChat from './channel_body_chat.vue';
 import Tutorial from './tutorial/tutorial.vue';
@@ -50,7 +50,7 @@ export default {
     components: {
         Tutorial, ChannelBodyChat
     },
-    props: ['activeChannel'],
+    props: [''],
     computed: {
         style() {
             let _this = this
