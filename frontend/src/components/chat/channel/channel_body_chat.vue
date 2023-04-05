@@ -25,7 +25,8 @@
                                         <div class="col text-container"><span class="truncate">Take profit: {{
                                             chat.take_profit }}</span></div>
                                         <div class="col text-container"><span class="truncate">Trade Status: {{
-                                            chat.trade_status }} <q-badge rounded floating color="green" /></span>
+                                            chat.trade_status }} <q-badge rounded floating
+                                                    :color="chat.trade_status == 'Open' ? 'green' : 'red'" /></span>
                                         </div>
                                     </div>
                                 </div>

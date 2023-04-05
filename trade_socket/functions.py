@@ -1,5 +1,11 @@
 channel_name = "hectper_scalper"
 
+from myproj.schannels.models import SChannel
+from myproj.signals.models import Signals
+from myproj.users.api.serializers import ChannelSerializer
+from myproj.users.api.serializers import SignalsSerializer
+from channels.db import database_sync_to_async
+
 def checkMsg(msg,datetime):
     currency = False
     trade_type = ''
@@ -52,18 +58,26 @@ async def send_message_to_group(channel_layer,group_name, message):
         print(f"Error sending message to channel: {e}")
 
 async def create_signal_channel_group(channel_layer,group_name):
-    # await channel_layer.flush()
     group_exists = await channel_layer.is_group_exists(group_name)
     if not group_exists:
         try:
             # Create a new channel with the custom channel name
-            channel = await channel_layer.new_channel(channel_name)
+
+            print(f"created new channel for: {group_name}")
+            channel = await channel_layer.new_channel()
             await channel_layer.group_add(group_name, channel)
         except Exception as e:
             print(f"Error creating signal channel: {e}")
             return False
         return True
     return True
+
+def handleData(message):
+    _message = eval(message)
+    if _message['trade_status'] == 'Open':
+        return addChannelSignals(_message)
+    elif _message['trade_status'] == 'Close':
+        return updateChannelSignals(_message)
 
 async def messageAction(connection,channel_layer,msg):
     message = eval(msg)
@@ -76,16 +90,28 @@ async def messageAction(connection,channel_layer,msg):
             # get group settings
             connection.send(b"signal group created.")
     elif message['type'] == 'signal':
-        await send_message_to_group(channel_layer,group_name, msg)
+        resultData = await database_sync_to_async(handleData)(msg)
+        await send_message_to_group(channel_layer,group_name, resultData)
 
-def sendData(data):
-    pass
-    # websocket.enableTrace(True)
-    # ws = websocket.WebSocket()
-    # ws.connect("ws://172.18.0.6:8000/ws/test_signals/ALL/trade_socket/?token=a02b74b5994a2fd776f19911272266623f87b569049dccee4a96453e606a3909")
-    # if ws.connected:
-    #     channelData = {'server_name': 'trade_socket','data':data}
-    #     message = json.dumps(channelData)
-    #     ws.send(message)
-    # else:
-    #     ws.close()
+
+def addChannelSignals(message):
+    channel_by_name = SChannel.objects.get(channel_name=message['currency'])
+    if channel_by_name:
+        result_id = channel_by_name.id
+        app_channel = SChannel(id=result_id)
+        signal = Signals.objects.add_signal(result_id,message)
+        app_channel.signals.add(signal.id)
+        app_channels = ChannelSerializer(channel_by_name)
+        return app_channels.data
+
+def updateChannelSignals(message):
+    print('signal updated')
+    channel_by_name = SChannel.objects.get(channel_name=message['currency'])
+    if channel_by_name:
+        signal_by_ticket = Signals.objects.get(magic_number=message['magic'])
+        if signal_by_ticket:
+            signal_by_ticket.trade_status = message['trade_status']
+            signal_by_ticket.save()
+        app_channels = ChannelSerializer(channel_by_name)
+        return app_channels.data
+

@@ -15,10 +15,15 @@ current_path = Path(__file__).parent.resolve()
 parent_dir = os.path.dirname(current_path)
 sys.path.append(str(parent_dir))
 
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+django.setup()
+
 from trade_socket.connection import *
 
 async def start_coroutine(loop, port):
     channel_layer = get_channel_layer()
+    # await channel_layer.flush()
     try:
         await create_signal_socket(loop, port, channel_layer)
     except Exception as e:

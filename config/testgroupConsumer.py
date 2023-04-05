@@ -42,46 +42,6 @@ class MyConsumer(AsyncWebsocketConsumer):
         message = await database_sync_to_async(self.getChannelData)()
         await self.channel_layer.group_send(self.room_group_name, {"type": 'client_join', "message": message})
 
-    async def send_group_left_message(self):
-        message = {'action': 'group_left', 'group_name': self.room_group_name}
-        await self.send(text_data=json.dumps({
-            'action': 'group_left',
-            'message':message
-        }))
-
-    async def send_group_updated_message(self):
-        message = {'signals':{
-                'id':self.addedChannelSignalsResult.id,
-                'take_profit': self.addedChannelSignalsResult.take_profit,
-                'trade_date': self.addedChannelSignalsResult.trade_date.strftime('%Y-%m-%d %H:%M:%S.%f%z'),
-                'trade_price':self.addedChannelSignalsResult.trade_price,
-                'trade_status': self.addedChannelSignalsResult.trade_status,
-                'trade_ticket':self.addedChannelSignalsResult.trade_ticket,
-                'trade_type': self.addedChannelSignalsResult.trade_type
-            }
-        }
-        await self.send(text_data=json.dumps({
-            'action': 'new_signal',
-            'message': message
-        }))
-
-    def addChannelSignals(self):
-        channel_by_name = SChannel.objects.get(channel_name=self.dict_obj['currency'])
-        if channel_by_name:
-            result_id = channel_by_name.id
-            app_channel = SChannel(id=result_id)
-            signal = Signals.objects.add_signal(result_id,self.dict_obj)
-            app_channel.signals.add(signal.id)
-            app_channels = SignalsSerializer(channel_by_name)
-            return signal
-
-    def updateChannelSignals(self):
-        signal_by_ticket = Signals.objects.get(trade_ticket=self.dict_obj['trade_ticket'])
-        if signal_by_ticket:
-            result_id = signal_by_ticket.id
-            app_signal = Signals(id=result_id)
-            print(app_signal)
-
     def getChannelData(self):
         channel_by_name = SChannel.objects.get(channel_name=self.room_name)
         app_channels = ChannelSerializer(channel_by_name)
@@ -100,11 +60,8 @@ class MyConsumer(AsyncWebsocketConsumer):
         }))
 
     async def updated_signal(self, event):
-        self.dict_obj = eval(event['message'])
-        if self.dict_obj['trade_status'] == 'Open':
-            self.addedChannelSignalsResult = await database_sync_to_async(self.addChannelSignals)()
-            await self.send_group_updated_message()
-        else:
-            self.addedChannelSignalsResult = await database_sync_to_async(self.updateChannelSignals)()
-            # await self.send_group_updated_message()
+        await self.send(text_data=json.dumps({
+            'action': 'new_signal',
+            'message': event['message']
+        }))
 

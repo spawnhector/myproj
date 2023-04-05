@@ -13,7 +13,7 @@ class SignalAccountManager(models.Manager):
         # Set timezone to Jamaica
         jamaica_tz = pytz.timezone('America/Jamaica')
         current_time = datetime.now(jamaica_tz)
-        signal = self.model(channel_id=channel_id,trade_ticket=data['trade_ticket'],trade_type=data['trade_type'],trade_price=data['trade_price'],take_profit=data['take_profit'],trade_date=current_time,trade_status=data['trade_status'])
+        signal = self.model(channel_id=channel_id,trade_ticket=data['trade_ticket'],magic_number=data['magic'],trade_type=data['trade_type'],trade_price=data['trade_price'],take_profit=data['take_profit'],trade_date=current_time,trade_status=data['trade_status'])
         signal.save()
         schannels.signals.add(signal.id)
         return signal
@@ -21,6 +21,7 @@ class SignalAccountManager(models.Manager):
 class Signals(models.Model):
     channel = models.ForeignKey('schannels.SChannel',related_name='_signal', on_delete=models.CASCADE, null=True)
     trade_ticket = models.CharField(max_length=255)
+    magic_number = models.CharField(max_length=255, null=True)
     trade_type = models.CharField(max_length=255)
     trade_price = models.CharField(max_length=255)
     take_profit = models.CharField(max_length=255)
