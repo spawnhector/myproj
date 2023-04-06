@@ -4,11 +4,12 @@
             @mouseleave="hideSubscribe()">
             <div class="channel_disabled_content">
                 <q-item-section v-if="show_subscribe" class="subscribe" side>
-                    <q-chip v-if="!channelChat.tutorial.dsFreeChannel" size="sm" @click="unlockChannel('Paid')"
+                    <q-chip v-if="!channelChat.tutorial.dsFreeChannel" size="sm" @click="unlockChannel(channelType[1])"
                         color="orange" text-color="white" icon="lock_open" clickable> Unlock For ${{ '10' }} /
                         month</q-chip>
-                    <q-chip v-if="channelChat.tutorial.dsFreeChannel" size="sm" @click="unlockChannel('Free')"
-                        color="orange" text-color="white" icon="lock_open" clickable> Unlock For Free</q-chip>
+                    <q-chip v-if="channelChat.tutorial.dsFreeChannel" size="sm" @click="unlockChannel(channelType[0])"
+                        color="orange" text-color="white" icon="lock_open" clickable> Unlock For {{ channelType[0]
+                        }}</q-chip>
                 </q-item-section>
                 <div class="lock">
                     <q-icon v-if="!unlocking" name="lock" />
@@ -82,8 +83,8 @@ export default {
     },
     computed: {
         ...mapState(useChannelChat, [
-            'freeChannels',
-            'paidChannels',
+            'channelType',
+            'channelSet'
         ]),
     },
     methods: {
@@ -97,15 +98,15 @@ export default {
             this.channelChat.setState('link', this.channel.id)
             this.channelChat.setState('currentChannelType', this.type)
             this.channelChat.setState('currentChannelIndex', this.index)
-            if (this.type == 'Free') this.channelChat.setState('currentChannel', this.freeChannels[this.index]);
-            else this.channelChat.setState('currentChannel', this.paidChannels[this.index]);
-
+            if (this.type == this.channelType[0]) this.channelChat.setState('currentChannel', this.channelSet[this.channelType[0]][this.index]);
+            else this.channelChat.setState('currentChannel', this.channelSet[this.channelType[1]][this.index]);
         },
         unlockChannel(channel_type) {
             let _this = this
             this.unlocking = true
             this.mainApp.setApp('mainLoader', true)
-            this.channelChat.setState('currentChannelIndex', this.index)
+            if (channel_type == this.channelType[0]) this.channelChat.setState('currentChannelIndex', 0);
+            else this.channelChat.setState('currentChannelIndex', this.index);
             this.auth.getToken().then(token => {
                 let data = new FormData()
                 data.append('channel', _this.channel.id)
@@ -114,7 +115,6 @@ export default {
                     let dataC = res.data.channels
                     _this.channelChat.setState('channelClicked', _this.channel.id)
                     let arrBuild = []
-                    // _this.link = 20
                     dataC.map(val => {
                         // console.log(val)
                         let channel_data = val;
