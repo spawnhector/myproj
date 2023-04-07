@@ -192,12 +192,15 @@ export default {
 .channel_disabled_wrapper
     position: relative
     width: -webkit-fill-available
+    width: -moz-available
     .channel_disabled_content
         position: absolute
         z-index: 1
         background-color: #000000b0
         width: -webkit-fill-available
+        width: -moz-available
         height: -webkit-fill-available
+        height: 100%
         .subscribe
             float: right
             top: 6px
@@ -219,6 +222,7 @@ export default {
         margin-top: 4px
 .container_items
     width: -webkit-fill-available
+    width: -moz-available
     .active_left_drawer_container_items
         background-color: #24292e
         color: #d7d7d7

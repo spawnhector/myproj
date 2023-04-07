@@ -28,13 +28,17 @@
         <div class="main">
             <div class="main__text-wrapper">
                 <Tutorial v-if="channelChat.tutorial.active" />
-                <ChannelBodyChat v-if="!channelChat.tutorial.active" />
+                <ChannelBodyChat v-if="!channelChat.tutorial.active && channelOnline" />
             </div>
         </div>
     </div>
 </template>
 
 <script>
+import {
+    mapActions,
+    mapState,
+} from 'pinia';
 import { useQuasar } from 'quasar';
 
 import {
@@ -52,6 +56,9 @@ export default {
     },
     props: [''],
     computed: {
+        ...mapState(useChannelChat, [
+            'channelOnline',
+        ]),
         style() {
             let _this = this
             return `height: ${_this.$q.screen.height - 171}px;background-color: rgb(255 255 255 / 19%);    overflow: hidden !important;`

@@ -8,32 +8,24 @@
                 <q-drawer style="background: rgba(255, 255, 255, 0.07) !important" v-model="leftDrawerOpen" bordered
                     :breakpoint="690">
                     <q-toolbar class="">
+                        <channelOnlineVue />
                     </q-toolbar>
                     <q-scroll-area style="height: calc(100% - 100px)">
                         <q-list style="width: 300px" class="channel-list" :class="classes.dsFreeChannel">
-                            <span v-if="(channelSet[channelType[0]].length > 0)">
-                                <q-item-label header>{{ channelType[0] }} Channel</q-item-label>
-                                <q-item class="left_drawer_container_items"
-                                    v-for="(channel, index) in channelSet[channelType[0]]" :key="channel.id" clickable
-                                    v-ripple>
-                                    <channelItems :index="index" :channel="channel" :link="link" :skeleton="skeleton"
-                                        :type="channelType[0]" />
-                                </q-item>
-                            </span>
-                            <span v-if="(channelSet[channelType[1]].length > 0)">
-                                <q-item-label header>{{ channelType[1] }} Channels</q-item-label>
-                                <q-intersection class="left_drawer_container_items"
-                                    v-for="(channel, index) in channelSet[channelType[1]]" :key="channel.id" clickable
-                                    v-ripple transition="flip-right">
-                                    <channelItems :index="index" :channel="channel" :link="link" :skeleton="skeleton"
-                                        :type="channelType[1]" />
-                                </q-intersection>
-                            </span>
+                            <div v-for="(type, type_index) in channelType" v-bind:key="type_index">
+                                <span v-if="(channelSet[type].length > 0)">
+                                    <q-item-label header>{{ type }} Channel</q-item-label>
+                                    <q-item class="left_drawer_container_items" v-for="(channel, index) in channelSet[type]"
+                                        :key="channel.id" clickable v-ripple>
+                                        <channelItems :index="index" :channel="channel" :link="link" :skeleton="skeleton"
+                                            :type="type" />
+                                    </q-item>
+                                </span>
+                            </div>
                         </q-list>
                     </q-scroll-area>
                 </q-drawer>
             </div>
-            <!-- <Blur blurtype="secondary" /> -->
             <q-page-container :style="style.pageContainer">
                 <channelBody />
             </q-page-container>
@@ -67,6 +59,7 @@ import Blur from '../layout/blur/blur.vue';
 import channelBody from './channel/channel_body.vue';
 import channelItems from './channel/channel_items.vue';
 import channelChatHeader from './channel/channelChatHeader.vue';
+import channelOnlineVue from './channel/channelOnline.vue';
 
 export default {
     name: 'ChatLayout',
@@ -95,7 +88,8 @@ export default {
         channelItems,
         channelBody,
         channelChatHeader,
-        Blur
+        Blur,
+        channelOnlineVue
     },
     computed: {
         ...mapState(useChannelChat, [
@@ -325,10 +319,13 @@ export default {
     padding: 1px 0px !important
 .left_drawer_container_items
     left: -1px
+    width: -moz-available
     width: -webkit-fill-available
     .q-item
+        width: -moz-available
         width: -webkit-fill-available
 .q-chip
+    width: -moz-available
     width: -webkit-fill-available
 .chat-container
     border-radius: 15px

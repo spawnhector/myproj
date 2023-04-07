@@ -15,7 +15,7 @@
                             <!-- <ConversationStart :mainKey="mainKey" /> -->
                         </div>
                         <div v-for="(chat, subKey) in chats" :key="`${chat.id}-chat-${subKey}`" class="bubble"
-                            :class="getChatClass(chat).main">
+                            :class="getChatClass(chat).main" @mouseenter="activateTooltip(chat)">
                             <q-chip square size="lg">
                                 <q-avatar font-size="13px" :color="getChatClass(chat).sub" text-color="white">{{
                                     chat.trade_type }}</q-avatar>
@@ -26,13 +26,38 @@
                                             chat.take_profit }}</span></div>
                                         <div class="col text-container"><span class="truncate">Trade Status: {{
                                             chat.trade_status }} <q-badge rounded floating
-                                                    :color="chat.trade_status == 'Open' ? 'green' : 'red'" /></span>
+                                                    :color="chat.trade_status == 'Open' ? 'green' : 'red'"
+                                                    :id="`target-tooltip-${chat.id}`" /></span>
                                         </div>
                                     </div>
                                 </div>
                             </q-chip>
                         </div>
                     </div>
+                    <q-tooltip :target="tooltipEl" v-model="showTooltip" anchor="center right" self="center left"
+                        :offset="[10, 10]" class="bg-main" @before-show="(v) => setSignalToolTip()">
+                        <q-spinner-cube v-if="!tooltipContent" color="primary" size="6em" />
+                        <div v-if="tooltipContent">
+                            <q-table card-class="bg-main-sub" bordered :rows="rows" :columns="columns" row-key="name"
+                                hide-header hide-bottom>
+                                <template v-slot:top>
+                                    <q-btn flat size="10px" rounded align="left" color="primary" icon="arrow_back"
+                                        label="Hide" @click="deactivateTooltip" />
+                                </template>
+                                <template v-slot:body="props">
+                                    <q-tr :props="props">
+                                        <q-td key="name" :props="props"> {{ props.row.name }} </q-td>
+                                        <q-td key="data" :props="props">
+                                            <q-chip v-if="props.row.name == 'Trade Ticket'" outline color="primary"
+                                                text-color="white" icon="confirmation_number"
+                                                @click="viewTradeTicket(props.row)"> {{ props.row.data }} </q-chip>
+                                            <span v-if="props.row.name == 'Magic Number'">{{ props.row.data }}</span>
+                                        </q-td>
+                                    </q-tr>
+                                </template>
+                            </q-table>
+                        </div>
+                    </q-tooltip>
                 </div>
             </transition>
             <q-page-sticky v-show="showScrollTo" position="bottom-right" :offset="fabPos">
@@ -47,6 +72,8 @@
 </template>
 
 <script>
+import { ref } from 'vue';
+
 import {
     mapActions,
     mapState,
@@ -66,11 +93,8 @@ export default {
     watch: {
         'currentChannel': {
             handler(channel, before) {
-                if (this.ws !== null) {
-                    this.leaveChannel(before)
-                }
-                this.joinChannel()
-                // this.getChannelChatData(channel)
+                if (this.ws !== null) this.leaveChannel(before);
+                this.joinChannel();
             },
             deep: true
         },
@@ -85,7 +109,8 @@ export default {
             'showChatData',
             'currentChannel',
             'newSignalCount',
-            'showScrollTo'
+            'showScrollTo',
+            'channelOnline'
         ]),
         style() {
             let _this = this
@@ -114,9 +139,21 @@ export default {
         const $q = useQuasar();
         let fabPos = [18, 18];
         let draggingFab = false;
+        const columns = [
+            {
+                name: 'name',
+                required: true,
+                label: 'Labels',
+                align: 'left',
+                field: row => row.name,
+            },
+            { name: 'data', align: 'right', label: 'Data', field: 'data' },
+        ]
         return {
             $q,
             fabPos,
+            columns,
+            rows: [],
             draggingFab,
             socket: null,
             requests: 0,
@@ -126,6 +163,10 @@ export default {
             container: undefined,
             subContainer: undefined,
             isNewChannel: true,
+            tooltipContent: false,
+            tooltipEl: false,
+            activeSignal: null,
+            showTooltip: false
         }
     },
     methods: {
@@ -185,24 +226,49 @@ export default {
             const datetime = new Date(datetimeString);
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true };
             return datetime.toLocaleString('en-US', options);
-        }
-    },
-    created() {
-        if (this.currentChannel) {
-            this.createChannelSocket()
+        },
+        activateTooltip(chat) {
+            this.activeSignal = chat;
+            this.tooltipEl = ref(`#target-tooltip-${chat.id}`);
+            this.showTooltip = true;
+        },
+        deactivateTooltip() {
+            console.log('here')
+            this.activeSignal = false;
+            this.tooltipEl = false;
+            this.showTooltip = false;
+        },
+        setSignalToolTip() {
+            this.rows = [
+                {
+                    name: 'Trade Ticket',
+                    data: this.activeSignal['trade_ticket'],
+                },
+                {
+                    name: 'Magic Number',
+                    data: this.activeSignal['magic_number'],
+                },
+            ]
+            this.tooltipContent = true;
+        },
+        viewTradeTicket() {
+            // console.log(row.data)
         }
     },
     mounted() {
-        if (this.currentChannel) {
-            this.getRefContainer(this.refContainer)
-            this.loadChannelData(this.scrollToLastElement)
-        }
+        let _this = this
+        this.$nextTick(() => {
+            if (_this.currentChannel) {
+                _this.getRefContainer(_this.refContainer)
+                _this.loadChannelData(_this.scrollToLastElement)
+            }
+        })
     }
 }
 </script>
 <style lang="scss">
 :root {
-    --white: #fff;
+    --white: #ffffff9c;
     --black: #000;
     --bg: #f8f8f8;
     --grey: #999;
@@ -210,6 +276,24 @@ export default {
     --light: #e6e6e6;
     --wrapper: 1000px;
     --blue: #00b0ff;
+}
+
+.q-table__top {
+    .q-btn__content {
+        position: relative;
+        left: -11px;
+    }
+}
+
+.bg-main {
+    background-color: #24292e !important;
+    padding: 0 !important;
+    pointer-events: all !important;
+}
+
+.bg-main-sub {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: var(--white);
 }
 
 .channel-chat-body {
@@ -331,6 +415,7 @@ export default {
             }
         }
     }
+
 }
 
 @keyframes slideFromLeft {
