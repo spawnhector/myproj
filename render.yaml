@@ -1,29 +1,9 @@
 services:
-  - type: web
-    name: django
-    dockerfilePath: ./compose/local/django/Dockerfile
-    # Uncomment the following lines if you want to use a database service:
-    # dependsOn:
-    #   - name: db
-    #     relation: "uses"
-    #     env:
-    #       - key: DATABASE_URL
-    #         fromService: db
-    #         fromKey: connectionString
-    #     ports:
-    #       - 5432/tcp
-    #     internal: true
-    #     region: aws_us_east_1
-    #   - type: "postgresql"
-    #     name: "db"
-    #     plan: "postgres_12_small"
-    #     env:
-    #       - key: POSTGRES_PASSWORD
-    #         generate: password
-    #       - key: POSTGRES_USER
-    #         value: user
-    #       - key: POSTGRES_DB
-    #         value: dbname
-    #     port: 5432
-    #     internal: true
-    #     region: aws_us_east_1
+  - name: my-app
+    env:
+      - name: ENV_VAR_NAME
+        value: "ENV_VAR_VALUE"
+    image: "ubuntu:latest"
+    plan: starter
+    instanceConfig:
+      machineType: "cpu-1"
