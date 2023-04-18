@@ -1,12 +1,12 @@
 version: "3"
 
-networks:
-  my_socket_ipc_network:
-    driver: bridge
+# networks:
+#   my_socket_ipc_network:
+#     driver: bridge
 
-volumes:
-  myproj_local_postgres_data: {}
-  myproj_local_postgres_data_backups: {}
+# volumes:
+#   myproj_local_postgres_data: {}
+#   myproj_local_postgres_data_backups: {}
 
 services:
   django:
