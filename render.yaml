@@ -9,25 +9,25 @@ version: "3"
 #   myproj_local_postgres_data_backups: {}
 
 services:
-  django:
-    build:
-      context: .
-      dockerfile: ./compose/local/django/Dockerfile
-    image: myproj_local_django
-    container_name: myproj_local_django
-    depends_on:
-      - postgres
-    volumes:
-      - .:/app:z
-    tty: true
-    env_file:
-      - ./.envs/.local/.django
-      - ./.envs/.local/.postgres
-    ports:
-      - "8000:8000"
-    networks:
-      - my_socket_ipc_network
-    command: /start
+  # django:
+  #   build:
+  #     context: .
+  #     dockerfile: ./compose/local/django/Dockerfile
+  #   image: myproj_local_django
+  #   container_name: myproj_local_django
+  #   depends_on:
+  #     - postgres
+  #   volumes:
+  #     - .:/app:z
+  #   tty: true
+  #   env_file:
+  #     - ./.envs/.local/.django
+  #     - ./.envs/.local/.postgres
+  #   ports:
+  #     - "8000:8000"
+  #   networks:
+  #     - my_socket_ipc_network
+  #   command: /start
 
   postgres:
     container_name: postgres
