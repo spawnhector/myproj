@@ -9,6 +9,7 @@ from myproj.users.api.serializers import ChannelSerializer
 from myproj.users.api.serializers import SignalsSerializer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+# from config.metatrader_server.channel_signal_data import channelSignalData
 
 class MyConsumer(AsyncWebsocketConsumer):
 
@@ -35,6 +36,8 @@ class MyConsumer(AsyncWebsocketConsumer):
                 await self.send_group_joined_message()
             elif message.get('action') == 'leave_group':
                 await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+            elif message.get('action') == 'live_signal_data':
+                await self.getLiveSignalData(message)
         except Exception as e:
             print(f"error sending message: {e}")
 
@@ -46,6 +49,12 @@ class MyConsumer(AsyncWebsocketConsumer):
         channel_by_name = SChannel.objects.get(channel_name=self.room_name)
         app_channels = ChannelSerializer(channel_by_name)
         return app_channels.data
+
+    async def getLiveSignalData(self,message):
+        pass
+        # data = await channelSignalData(message['channel'],message['signal']['magic_number'])
+        # print(data)
+        # await self.channel_layer.group_send(self.room_group_name, {"type": 'live_signal_data', "message": message})
 
     async def client_join(self, event):
         await self.send(text_data=json.dumps({
@@ -65,3 +74,8 @@ class MyConsumer(AsyncWebsocketConsumer):
             'message': event['message']
         }))
 
+    async def live_signal_data(self, event):
+        await self.send(text_data=json.dumps({
+            'action': 'live_signal_data',
+            'message': event['message']
+        }))

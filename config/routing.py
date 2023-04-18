@@ -6,7 +6,7 @@ from config.testgroupConsumer import MyConsumer
 from config.channelData import ChannelDataConsumer
 
 websocket_urlpatterns = [
-    re_path(r'ws/signals/(?P<room_name>\w+)/$', SignalConsumer.as_asgi()),
-    re_path(r'ws/test_signals/(?P<room_name>\w+)/(?P<server_name>\w+)/$', MyConsumer.as_asgi()),
+    # re_path(r'ws/signals/(?P<room_name>\w+)/$', SignalConsumer.as_asgi()),
+    re_path(r'ws/signals/$', MyConsumer.as_asgi()),
     re_path(r'ws/channel/all/$', ChannelDataConsumer.as_asgi())
 ]

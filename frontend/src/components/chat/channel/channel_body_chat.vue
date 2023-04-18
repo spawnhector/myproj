@@ -15,7 +15,8 @@
                             <!-- <ConversationStart :mainKey="mainKey" /> -->
                         </div>
                         <div v-for="(chat, subKey) in chats" :key="`${chat.id}-chat-${subKey}`" class="bubble"
-                            :class="getChatClass(chat).main" @mouseenter="activateTooltip(chat)">
+                            :class="getChatClass(chat).main" @mouseenter="activateTooltip(chat)"
+                            :id="`target-tooltip-${chat.id}`">
                             <q-chip square size="lg">
                                 <q-avatar font-size="13px" :color="getChatClass(chat).sub" text-color="white">{{
                                     chat.trade_type }}</q-avatar>
@@ -26,38 +27,23 @@
                                             chat.take_profit }}</span></div>
                                         <div class="col text-container"><span class="truncate">Trade Status: {{
                                             chat.trade_status }} <q-badge rounded floating
-                                                    :color="chat.trade_status == 'Open' ? 'green' : 'red'"
-                                                    :id="`target-tooltip-${chat.id}`" /></span>
+                                                    :color="this.constants['channel']['signal']['status'][chat.trade_status] ? 'green' : 'red'" /></span>
                                         </div>
                                     </div>
                                 </div>
                             </q-chip>
+                            <q-tooltip anchor="center right" self="center left" :offset="[10, 10]" class="bg-main"
+                                @before-show="setSignalToolTip" @before-hide="deactivateTooltip">
+                                <q-spinner-cube v-if="!tooltipContent" color="primary" size="6em" />
+                                <div v-if="tooltipContent && showSignalOpenTooltip">
+                                    <signalOpen />
+                                </div>
+                                <div v-if="tooltipContent && showSignalCloseTooltip">
+                                    <signalClose />
+                                </div>
+                            </q-tooltip>
                         </div>
                     </div>
-                    <q-tooltip :target="tooltipEl" v-model="showTooltip" anchor="center right" self="center left"
-                        :offset="[10, 10]" class="bg-main" @before-show="(v) => setSignalToolTip()">
-                        <q-spinner-cube v-if="!tooltipContent" color="primary" size="6em" />
-                        <div v-if="tooltipContent">
-                            <q-table card-class="bg-main-sub" bordered :rows="rows" :columns="columns" row-key="name"
-                                hide-header hide-bottom>
-                                <template v-slot:top>
-                                    <q-btn flat size="10px" rounded align="left" color="primary" icon="arrow_back"
-                                        label="Hide" @click="deactivateTooltip" />
-                                </template>
-                                <template v-slot:body="props">
-                                    <q-tr :props="props">
-                                        <q-td key="name" :props="props"> {{ props.row.name }} </q-td>
-                                        <q-td key="data" :props="props">
-                                            <q-chip v-if="props.row.name == 'Trade Ticket'" outline color="primary"
-                                                text-color="white" icon="confirmation_number"
-                                                @click="viewTradeTicket(props.row)"> {{ props.row.data }} </q-chip>
-                                            <span v-if="props.row.name == 'Magic Number'">{{ props.row.data }}</span>
-                                        </q-td>
-                                    </q-tr>
-                                </template>
-                            </q-table>
-                        </div>
-                    </q-tooltip>
                 </div>
             </transition>
             <q-page-sticky v-show="showScrollTo" position="bottom-right" :offset="fabPos">
@@ -72,21 +58,25 @@
 </template>
 
 <script>
-import { ref } from 'vue';
-
 import {
     mapActions,
     mapState,
 } from 'pinia';
 import { useQuasar } from 'quasar';
 
-import { useChannelChat } from '../../../lib/store';
+import {
+    useChannelChat,
+    useMainAppStore,
+    useToolTipStore,
+} from '../../../lib/store';
+import signalClose from '../../tooltip/signalClose.vue';
+import signalOpen from '../../tooltip/signalOpen.vue';
 import ConversationStart from './conversation_start.vue';
 
 export default {
     name: 'ChannelBodyChat',
     components: {
-        ConversationStart
+        ConversationStart, signalClose, signalOpen
     },
     setup() {
     },
@@ -101,6 +91,9 @@ export default {
     },
     props: [''],
     computed: {
+        ...mapState(useMainAppStore, [
+            'constants',
+        ]),
         ...mapState(useChannelChat, [
             'ws',
             'loading',
@@ -110,7 +103,13 @@ export default {
             'currentChannel',
             'newSignalCount',
             'showScrollTo',
-            'channelOnline'
+            'channelOnline',
+        ]),
+        ...mapState(useToolTipStore, [
+            'activeSignal',
+            'showSignalCloseTooltip',
+            'showSignalOpenTooltip',
+            'tooltipContent'
         ]),
         style() {
             let _this = this
@@ -139,21 +138,10 @@ export default {
         const $q = useQuasar();
         let fabPos = [18, 18];
         let draggingFab = false;
-        const columns = [
-            {
-                name: 'name',
-                required: true,
-                label: 'Labels',
-                align: 'left',
-                field: row => row.name,
-            },
-            { name: 'data', align: 'right', label: 'Data', field: 'data' },
-        ]
+
         return {
             $q,
             fabPos,
-            columns,
-            rows: [],
             draggingFab,
             socket: null,
             requests: 0,
@@ -163,15 +151,12 @@ export default {
             container: undefined,
             subContainer: undefined,
             isNewChannel: true,
-            tooltipContent: false,
-            tooltipEl: false,
-            activeSignal: null,
-            showTooltip: false
         }
     },
     methods: {
         ...mapActions(useChannelChat, [
             'createChannelSocket',
+            'getLiveData',
             'loadChannelData',
             'getRefContainer',
             'leaveChannel',
@@ -179,6 +164,37 @@ export default {
             'handleScroll',
             'setState'
         ]),
+        ...mapActions(useToolTipStore, [
+            'activateTooltip',
+            'deactivateTooltip',
+            'setToolTipState'
+        ]),
+        setSignalToolTip() {
+            let _this = this;
+            try {
+                if (this.constants['channel']['signal']['status'][_this.activeSignal["trade_status"]]) { this.getLiveData(_this.activeSignal); }
+                else {
+                    let rows = [
+                        {
+                            name: "Trade Ticket",
+                            data: _this.activeSignal["trade_ticket"],
+                        },
+                        {
+                            name: "Magic Number",
+                            data: _this.activeSignal["magic_number"],
+                        },
+                        {
+                            name: "Gains",
+                            data: "20% in profit",
+                        },
+                    ];
+                    _this.setToolTipState('rows', rows);
+                    _this.setToolTipState('tooltipContent', true);
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        },
         getChatClass(chat) {
             return {
                 main: {
@@ -227,33 +243,6 @@ export default {
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true };
             return datetime.toLocaleString('en-US', options);
         },
-        activateTooltip(chat) {
-            this.activeSignal = chat;
-            this.tooltipEl = ref(`#target-tooltip-${chat.id}`);
-            this.showTooltip = true;
-        },
-        deactivateTooltip() {
-            console.log('here')
-            this.activeSignal = false;
-            this.tooltipEl = false;
-            this.showTooltip = false;
-        },
-        setSignalToolTip() {
-            this.rows = [
-                {
-                    name: 'Trade Ticket',
-                    data: this.activeSignal['trade_ticket'],
-                },
-                {
-                    name: 'Magic Number',
-                    data: this.activeSignal['magic_number'],
-                },
-            ]
-            this.tooltipContent = true;
-        },
-        viewTradeTicket() {
-            // console.log(row.data)
-        }
     },
     mounted() {
         let _this = this
@@ -465,4 +454,12 @@ export default {
         opacity: 1;
     }
 }
+</style>
+<style lang="sass">
+.my-sticky-column-table
+  width: 325px
+  thead tr:last-child th:last-child
+    background-color: #24292e
+  td:last-child
+    background-color: #24292e
 </style>

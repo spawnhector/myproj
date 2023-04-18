@@ -141,3 +141,24 @@ services:
     tty: true
     networks:
       - my_socket_ipc_network
+  mt5Server:
+    build:
+      context: .
+      dockerfile: ./metatrader_server/Dockerfile
+      args:
+        TAG: wine:20.04
+    image: metatrader_server
+    container_name: metatrader_server
+    depends_on:
+      - django
+    volumes:
+      - .:/app:z
+    tty: true
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    # ports:
+    #   - "8000:8000"
+    networks:
+      - my_socket_ipc_network
+    # command: /start
