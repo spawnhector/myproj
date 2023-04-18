@@ -1,99 +1,104 @@
-version: "3"
+version: 2
 
 services:
   django:
     image: myproj_local_django
+    containerEnv:
+      - file: .envs/.local/.django
+        format: env
+      - file: .envs/.local/.postgres
+        format: env
     env:
       DJANGO_SETTINGS_MODULE: config.settings.local
-      USE_DOCKER: "yes"
-    ports:
-      - 8000:8000
-    volumes:
-      - /app:/app
-    command: /start
-    depends_on:
-      - postgres
-      - reddis
-      - trade_socket
-    env_file:
-      - .envs/.local/.django
-      - .envs/.local/.postgres
-    networks:
-      - my_socket_ipc_network
-
-  postgres:
-    image: postgres:11.1
-    volumes:
-      - myproj_local_postgres_data:/var/lib/postgresql/data
-      - myproj_local_postgres_data_backups:/backups
-    expose:
-      - 5432
-    ports:
-      - 5432:5432
-    env_file:
-      - .envs/.local/.postgres
-    networks:
-      - my_socket_ipc_network
-
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@mydomain.com
-      PGADMIN_DEFAULT_PASSWORD: postgres
-      PGADMIN_LISTEN_PORT: "5454"
-    ports:
-      - 5454:5454
-    depends_on:
-      - postgres
-    networks:
-      - my_socket_ipc_network
-
-  frontend:
-    image: node:lts
-    entrypoint: /bin/bash
-    working_dir: /app/
-    ports:
-      - 80:80
-    volumes:
-      - /app:/app
-    networks:
-      - my_socket_ipc_network
-
-  trade_socket:
-    image: trade_socket:latest
-    ports:
-      - 8080-8099:8080-8099
-    depends_on:
-      - postgres
-      - reddis
-    env:
-      DJANGO_SETTINGS_MODULE: config.settings.local
-      USE_DOCKER: "yes"
-      REDIS_URL: redis://reddis:6379/0
-    command: /start
-    volumes:
-      - /app:/app
-    networks:
-      - my_socket_ipc_network
-
-  reddis:
-    image: redis:5
-    ports:
-      - 6379:6379
-    networks:
-      - my_socket_ipc_network
-
-  mt5Server:
-    image: metatrader_server
-    depends_on:
-      - django
-    volumes:
-      - /app:/app
-    env_file:
-      - .envs/.local/.django
-      - .envs/.local/.postgres
-    networks:
-      - my_socket_ipc_network
+    envVars:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    envSecrets: {}
+    healthCheck:
+      http:
+        path: /
+        port: 8000
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+    instances:
+      - name: web
+        command: /start
+        port: 8000
+        routes:
+          - path: /
+            primary: true
+            handle: rewrite
+        environment: {}
+        envVars: []
+        envSecrets: {}
+        annotations: {}
+        healthCheck: {}
+        httpPort: 8000
+        tcpPorts: []
+        udpPorts: []
+        affinity: {}
+        labels: {}
+        envs: []
+        dependsOn: []
+        volumes: []
+        volumeMounts: []
+        networks:
+          - my_socket_ipc_network
 
 networks:
   my_socket_ipc_network:
+    internal: true
+
+volumes: {}
+# pgadmin:
+#   containerEnv:
+#     - file: .envs/.local/.postgres
+#       format: env
+#   env: {}
+#   envVars: []
+#   envSecrets: {}
+#   healthCheck: {}
+#   instances:
+#     - name: pgadmin
+#       port: 5454
+#       routes:
+#         - path: /
+#           primary: true
+#           handle: rewrite
+#       environment: {}
+#       envVars: []
+#       envSecrets: {}
+#       annotations: {}
+#       httpPort: 5454
+#       tcpPorts: []
+#       udpPorts: []
+#       affinity: {}
+#       labels: {}
+#       envs: []
+#       dependsOn:
+#         - name: postgres
+#       volumes: []
+#       volumeMounts: []
+#       networks:
+#         - my_socket_ipc_network
+
+# frontend:
+#   image: node:lts
+#   workingDir: /app/
+#   entrypoint: /bin/bash
+#   containerEnv:
+#     - file: .envs/.local/.django
+#       format: env
+#   env: {}
+#   envVars: []
+#   envSecrets: {}
+#   healthCheck: {}
+#   instances:
+#     - name: frontend
+#       port: 80
+#       routes:
+#         - path: /
+#           primary: true
+#
