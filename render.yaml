@@ -2,21 +2,6 @@ services:
   - type: web
     name: django
     dockerfilePath: ./compose/local/django/Dockerfile
-    image: myproj_local_django
-    container_name: myproj_local_django
-    depends_on:
-      - postgres
-    volumes:
-      - .:/app:z
-    tty: true
-    env_file:
-      - ./.envs/.local/.django
-      - ./.envs/.local/.postgres
-    ports:
-      - "8000:8000"
-    networks:
-      - my_socket_ipc_network
-    command: /start
     # Uncomment the following lines if you want to use a database service:
     # dependsOn:
     #   - name: db
