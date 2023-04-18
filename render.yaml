@@ -1,5 +1,6 @@
 services:
-  - name: django
+  - type: web
+    name: django
     dockerfilePath: ./compose/local/django/Dockerfile
     image: myproj_local_django
     container_name: myproj_local_django
