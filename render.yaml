@@ -1,10 +1,9 @@
 services:
   - type: web
     name: my-app
-    # env:
-    #   - name: ENV_VAR_NAME
-    #     value: "ENV_VAR_VALUE"
-    image: "ubuntu:latest"
-    plan: starter
-    instanceConfig:
-      machineType: "cpu-1"
+    dockerfile: Dockerfile
+    env: production
+    healthCheckPath: /
+
+build:
+  image: ubuntu:latest
