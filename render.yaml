@@ -1,104 +1,43 @@
-version: 2
-
 services:
-  django:
+  - name: django
+    dockerfilePath: ./compose/local/django/Dockerfile
     image: myproj_local_django
-    containerEnv:
-      - file: .envs/.local/.django
-        format: env
-      - file: .envs/.local/.postgres
-        format: env
-    env:
-      DJANGO_SETTINGS_MODULE: config.settings.local
-    envVars:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    envSecrets: {}
-    healthCheck:
-      http:
-        path: /
-        port: 8000
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 5
-    instances:
-      - name: web
-        command: /start
-        port: 8000
-        routes:
-          - path: /
-            primary: true
-            handle: rewrite
-        environment: {}
-        envVars: []
-        envSecrets: {}
-        annotations: {}
-        healthCheck: {}
-        httpPort: 8000
-        tcpPorts: []
-        udpPorts: []
-        affinity: {}
-        labels: {}
-        envs: []
-        dependsOn: []
-        volumes: []
-        volumeMounts: []
-        networks:
-          - my_socket_ipc_network
-
-networks:
-  my_socket_ipc_network:
-    internal: true
-
-volumes: {}
-# pgadmin:
-#   containerEnv:
-#     - file: .envs/.local/.postgres
-#       format: env
-#   env: {}
-#   envVars: []
-#   envSecrets: {}
-#   healthCheck: {}
-#   instances:
-#     - name: pgadmin
-#       port: 5454
-#       routes:
-#         - path: /
-#           primary: true
-#           handle: rewrite
-#       environment: {}
-#       envVars: []
-#       envSecrets: {}
-#       annotations: {}
-#       httpPort: 5454
-#       tcpPorts: []
-#       udpPorts: []
-#       affinity: {}
-#       labels: {}
-#       envs: []
-#       dependsOn:
-#         - name: postgres
-#       volumes: []
-#       volumeMounts: []
-#       networks:
-#         - my_socket_ipc_network
-
-# frontend:
-#   image: node:lts
-#   workingDir: /app/
-#   entrypoint: /bin/bash
-#   containerEnv:
-#     - file: .envs/.local/.django
-#       format: env
-#   env: {}
-#   envVars: []
-#   envSecrets: {}
-#   healthCheck: {}
-#   instances:
-#     - name: frontend
-#       port: 80
-#       routes:
-#         - path: /
-#           primary: true
-#
+    container_name: myproj_local_django
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app:z
+    tty: true
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - my_socket_ipc_network
+    command: /start
+    # Uncomment the following lines if you want to use a database service:
+    # dependsOn:
+    #   - name: db
+    #     relation: "uses"
+    #     env:
+    #       - key: DATABASE_URL
+    #         fromService: db
+    #         fromKey: connectionString
+    #     ports:
+    #       - 5432/tcp
+    #     internal: true
+    #     region: aws_us_east_1
+    #   - type: "postgresql"
+    #     name: "db"
+    #     plan: "postgres_12_small"
+    #     env:
+    #       - key: POSTGRES_PASSWORD
+    #         generate: password
+    #       - key: POSTGRES_USER
+    #         value: user
+    #       - key: POSTGRES_DB
+    #         value: dbname
+    #     port: 5432
+    #     internal: true
+    #     region: aws_us_east_1
