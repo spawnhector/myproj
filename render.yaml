@@ -1,8 +1,9 @@
 services:
-  - name: my-app
-    env:
-      - name: ENV_VAR_NAME
-        value: "ENV_VAR_VALUE"
+  - type: web
+    name: my-app
+    # env:
+    #   - name: ENV_VAR_NAME
+    #     value: "ENV_VAR_VALUE"
     image: "ubuntu:latest"
     plan: starter
     instanceConfig:
