@@ -1,9 +1,13 @@
 services:
   - type: web
-    name: my-app
-    dockerfile: Dockerfile
-    env: production
-    healthCheckPath: /
-
-build:
-  image: ubuntu:latest
+    name: my-ubuntu-app
+    # dockerfile: Dockerfile
+    env:
+      - key: MY_ENV_VAR
+        value: my_env_var_value
+    start_command: /bin/bash start.sh
+    health_check_path: /
+    health_check_interval_seconds: 10
+    http_port: 8000
+    build:
+      image: ubuntu:latest
