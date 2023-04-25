@@ -5,8 +5,9 @@ from .base import env
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 SECRET_KEY = env("DJANGO_SECRET_KEY")
-# https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["onlinecash.gq"])
+# https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts 54.209.137.204
+# ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["onlinecash.gq"])
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["54.209.137.204"])
 
 # DATABASES
 # ------------------------------------------------------------------------------
@@ -60,10 +61,11 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # EMAIL
 # ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email
+# https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email 54.209.137.204
 DEFAULT_FROM_EMAIL = env(
     "DJANGO_DEFAULT_FROM_EMAIL",
-    default="myproj <noreply@onlinecash.gq>",
+    # default="myproj <noreply@onlinecash.gq>",
+    default="myproj <noreply@54.209.137.204>",
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#server-email
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
@@ -140,9 +142,10 @@ LOGGING = {
 
 # django-rest-framework
 # -------------------------------------------------------------------------------
-# Tools that generate code samples can use SERVERS to point to the correct domain
+# Tools that generate code samples can use SERVERS to point to the correct domain 54.209.137.204
 SPECTACULAR_SETTINGS["SERVERS"] = [  # noqa F405
-    {"url": "https://onlinecash.gq", "description": "Production server"}
+    # {"url": "https://onlinecash.gq", "description": "Production server"}
+    {"url": "https://54.209.137.204", "description": "Production server"}
 ]
 
 # Your stuff...

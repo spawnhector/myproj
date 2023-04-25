@@ -28,7 +28,7 @@ certificatesResolvers:
 http:
   routers:
     django:
-      rule: "Host(`api.onlinecash.gq`)"
+      rule: "Host(`54.209.137.204`)"
       entryPoints:
         - web-secure
       middlewares:
@@ -38,7 +38,7 @@ http:
         # https://docs.traefik.io/master/routing/routers/#certresolver
         certResolver: letsencrypt
     frontend:
-      rule: "Host(`www.onlinecash.gq`)"
+      rule: "Host(`54.209.137.204`)"
       entryPoints:
         - web-secure
       middlewares:
