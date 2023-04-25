@@ -78,10 +78,13 @@ services:
   frontend:
     container_name: frontend
     restart: always
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: hectperscalper_frontend_image
+    # build:
+    #   context: ./frontend
+    #   dockerfile: Dockerfile
+    # image: hectperscalper_frontend_image
+    image: node:lts
+    working_dir: /app/
+    entrypoint: /bin/bash
     depends_on:
       - django
     volumes:
@@ -90,15 +93,16 @@ services:
       - 80
     networks:
       - my_socket_ipc_network
+
   trade_socket:
     container_name: trade_socket_server
     restart: always
     build:
-      context: ./trade_socket
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./trade_socket/Dockerfile
     image: trade_socket:latest
     ports:
-      - "8080:8080"
+      - "8080-8099:8080-8099"
     depends_on:
       - postgres
     env_file:
