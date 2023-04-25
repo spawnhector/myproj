@@ -27,8 +27,8 @@ certificatesResolvers:
 
 http:
   routers:
-    django:
-      rule: "Host(`54.209.137.204`)"
+    web-secure-router:
+      rule: "Host(`54.209.137.204`) || Host(`54.209.137.204`)"
       entryPoints:
         - web-secure
       middlewares:
@@ -37,16 +37,16 @@ http:
       tls:
         # https://docs.traefik.io/master/routing/routers/#certresolver
         certResolver: letsencrypt
-    frontend:
-      rule: "Host(`54.209.137.204`)"
-      entryPoints:
-        - web-secure
-      middlewares:
-        - csrf
-      service: frontend
-      tls:
-        # https://docs.traefik.io/master/routing/routers/#certresolver
-        certResolver: letsencrypt
+    # frontend:
+    #   rule: "Host(`54.209.137.204`)"
+    #   entryPoints:
+    #     - web-secure
+    #   middlewares:
+    #     - csrf
+    #   service: frontend
+    #   tls:
+    #     # https://docs.traefik.io/master/routing/routers/#certresolver
+    #     certResolver: letsencrypt
     # trade_socket:
     #   rule: "Host(`hts.onlinecash.gq`)"
     #   entryPoints:
