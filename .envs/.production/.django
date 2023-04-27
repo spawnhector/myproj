@@ -5,7 +5,7 @@ DJANGO_SETTINGS_MODULE=config.settings.production
 DJANGO_SECRET_KEY=DVlYTkZp24DqFsZzmqMSC0GXBJiSjou3Kyh0mFPaVeVHonZPOCH5T0yAFiZZKcw4
 DJANGO_ADMIN_URL=fUAMVkPKS1wOYBNdFtVS9wWa0wVk9YgJ/
 # DJANGO_ALLOWED_HOSTS=api.onlinecash.gq
-DJANGO_ALLOWED_HOSTS=35.175.105.0
+DJANGO_ALLOWED_HOSTS=54.158.196.250
 
 # Security
 # ------------------------------------------------------------------------------

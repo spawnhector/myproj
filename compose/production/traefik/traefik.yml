@@ -28,7 +28,7 @@ certificatesResolvers:
 http:
   routers:
     web-secure-router:
-      rule: "Host(`35.175.105.0`) || Host(`35.175.105.0`)"
+      rule: "Host(`54.158.196.250`) || Host(`54.158.196.250`)"
       entryPoints:
         - web-secure
       middlewares:
@@ -38,7 +38,7 @@ http:
         # https://docs.traefik.io/master/routing/routers/#certresolver
         certResolver: letsencrypt
     # frontend:
-    #   rule: "Host(`35.175.105.0`)"
+    #   rule: "Host(`54.158.196.250`)"
     #   entryPoints:
     #     - web-secure
     #   middlewares:

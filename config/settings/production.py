@@ -5,9 +5,9 @@ from .base import env
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 SECRET_KEY = env("DJANGO_SECRET_KEY")
-# https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts 35.175.105.0
+# https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts 54.158.196.250
 # ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["onlinecash.gq"])
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["35.175.105.0"])
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["54.158.196.250"])
 
 # DATABASES
 # ------------------------------------------------------------------------------
@@ -61,11 +61,11 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # EMAIL
 # ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email 35.175.105.0
+# https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email 54.158.196.250
 DEFAULT_FROM_EMAIL = env(
     "DJANGO_DEFAULT_FROM_EMAIL",
     # default="myproj <noreply@onlinecash.gq>",
-    default="myproj <noreply@35.175.105.0>",
+    default="myproj <noreply@54.158.196.250>",
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#server-email
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
@@ -142,10 +142,10 @@ LOGGING = {
 
 # django-rest-framework
 # -------------------------------------------------------------------------------
-# Tools that generate code samples can use SERVERS to point to the correct domain 35.175.105.0
+# Tools that generate code samples can use SERVERS to point to the correct domain 54.158.196.250
 SPECTACULAR_SETTINGS["SERVERS"] = [  # noqa F405
     # {"url": "https://onlinecash.gq", "description": "Production server"}
-    {"url": "https://35.175.105.0", "description": "Production server"}
+    {"url": "https://54.158.196.250", "description": "Production server"}
 ]
 
 # Your stuff...
